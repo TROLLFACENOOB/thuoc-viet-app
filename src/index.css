@@ -1,3 +1,240 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Reset và font cơ bản */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+  background: #fae8ff; /* Fallback color */
+}
+
+/* ===== HÌNH NỀN CHỮA LÀNH ===== */
+
+/* Layer 1: Gradient động với màu pastel nhẹ nhàng */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  background: linear-gradient(135deg, 
+    #fae8ff 0%,    /* Tím lavender nhạt */
+    #fce7f3 20%,   /* Hồng pastel */
+    #fed7aa 40%,   /* Cam nhạt */
+    #fef3c7 60%,   /* Vàng kem */
+    #ddd6fe 80%,   /* Tím periwinkle */
+    #fae8ff 100%   /* Quay về tím */
+  );
+  background-size: 400% 400%;
+  animation: healingGradient 20s ease infinite;
+}
+
+/* Layer 2: Các chấm sáng lơ lửng (như bong bóng ánh sáng) */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-image: 
+    /* Chấm tím ở góc trên trái */
+    radial-gradient(circle at 15% 20%, rgba(167, 139, 250, 0.2) 0%, transparent 30%),
+    /* Chấm hồng ở góc dưới phải */
+    radial-gradient(circle at 85% 80%, rgba(244, 114, 182, 0.2) 0%, transparent 30%),
+    /* Chấm cam giữa bên trái */
+    radial-gradient(circle at 10% 60%, rgba(251, 146, 60, 0.15) 0%, transparent 25%),
+    /* Chấm vàng góc trên phải */
+    radial-gradient(circle at 90% 15%, rgba(250, 204, 21, 0.15) 0%, transparent 25%),
+    /* Chấm xanh dương nhạt giữa */
+    radial-gradient(circle at 50% 50%, rgba(147, 197, 253, 0.12) 0%, transparent 35%),
+    /* Chấm hồng nhạt dưới trái */
+    radial-gradient(circle at 20% 85%, rgba(251, 207, 232, 0.18) 0%, transparent 30%);
+  animation: floatingLights 25s ease-in-out infinite;
+}
+
+/* Animation: Di chuyển gradient như sóng biển */
+@keyframes healingGradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Animation: Các chấm sáng lơ lửng nhẹ nhàng */
+@keyframes floatingLights {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translate(10px, -15px) scale(1.05);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-5px, -25px) scale(1.1);
+    opacity: 0.7;
+  }
+  75% {
+    transform: translate(15px, -10px) scale(1.03);
+    opacity: 0.75;
+  }
+}
+
+/* ===== CUSTOM SCROLLBAR - Màu gradient dịu ===== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(243, 232, 255, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, 
+    rgba(147, 51, 234, 0.5), 
+    rgba(236, 72, 153, 0.5)
+  );
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, 
+    rgba(126, 34, 206, 0.7), 
+    rgba(219, 39, 119, 0.7)
+  );
+}
+
+/* ===== SMOOTH SCROLL ===== */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ===== TRANSITIONS CHO TẤT CẢ ===== */
+* {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              transform 0.3s ease;
+}
+
+button,
+a {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effect nhẹ nhàng cho buttons */
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ===== FOCUS STATE - Accessibility ===== */
+*:focus-visible {
+  outline: 2px solid rgba(147, 51, 234, 0.5);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1);
+  border-radius: 4px;
+}
+
+/* ===== REMOVE TAP HIGHLIGHT ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== IMAGES ===== */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ===== FADE IN ANIMATION cho trang load ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#root > div {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* ===== TEXT SHADOW nhẹ cho headers ===== */
+h1, h2, h3 {
+  text-shadow: 0 2px 10px rgba(147, 51, 234, 0.08);
+}
+
+/* ===== GLASS MORPHISM EFFECT (tùy chọn) ===== */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(147, 51, 234, 0.1);
+}
+
+/* ===== PULSE ANIMATION cho các phần tử quan trọng ===== */
+@keyframes softPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+.pulse-glow {
+  animation: softPulse 3s ease-in-out infinite;
+}
+
+/* ===== SHIMMER EFFECT cho loading states ===== */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, X, Sparkles } from 'lucide-react';
-import { useHistory } from '../context/HistoryContext'; // 👈 Để thêm vào lịch sử
-import { searchMedicine } from '../api/medicineService'; // 👈 Logic API thật
+import { useHistory } from '../context/HistoryContext';
+import { searchMedicine } from '../api/medicineService';
 
-// Dữ liệu local của trang
 const commonSymptoms = [
   'Đau đầu', 'Sốt', 'Ho', 'Sổ mũi', 'Đau bụng',
   'Tiêu chảy', 'Buồn nôn', 'Mệt mỏi', 'Đau họng',
@@ -18,10 +17,9 @@ export default function SearchPage() {
   const [isSearching, setIsSearching] = useState(false);
 
   const navigate = useNavigate();
-  const { addHistoryItem } = useHistory(); // 👈 Lấy hàm thêm lịch sử
+  const { addHistoryItem } = useHistory();
 
   const getCurrentLocation = () => {
-    // ... logic getCurrentLocation (giữ nguyên) ...
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -35,25 +33,21 @@ export default function SearchPage() {
   };
 
   const addSymptom = (symptom) => {
-    // ... logic addSymptom (giữ nguyên) ...
     if (!selectedSymptoms.includes(symptom)) {
       setSelectedSymptoms([...selectedSymptoms, symptom]);
     }
   };
 
   const removeSymptom = (symptom) => {
-    // ... logic removeSymptom (giữ nguyên) ...
     setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
   };
 
-  // ⭐️ LOGIC MỚI: Xử lý tìm kiếm 
   const handleSearch = async () => {
     if (selectedSymptoms.length === 0) {
       alert('Vui lòng chọn ít nhất một triệu chứng!');
       return;
     }
 
-    // ... Cảnh báo (giữ nguyên) ...
     const confirmSearch = window.confirm(
       '⚠️ LƯU Ý QUAN TRỌNG:\n\n' +
       '• Thông tin chỉ THAM KHẢO, KHÔNG THAY THẾ bác sĩ\n' +
@@ -67,15 +61,9 @@ export default function SearchPage() {
     setIsSearching(true);
 
     try {
-      // 1. Gọi API (hiện đang là mock)
       const result = await searchMedicine(selectedSymptoms, location);
-
-      // 2. Thêm vào lịch sử (qua Context)
       addHistoryItem(selectedSymptoms, result);
-
-      // 3. Chuyển sang trang Result và mang theo dữ liệu
       navigate('/result', { state: { result: result } });
-
     } catch (error) {
       alert('Đã có lỗi xảy ra. Vui lòng thử lại.');
       console.error(error);
@@ -88,8 +76,8 @@ export default function SearchPage() {
     <div className="space-y-6 pb-6">
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate('/')} // 👈 Nút X giờ quay về trang chủ
-          className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+          onClick={() => navigate('/')}
+          className="p-2 hover:bg-white/60 rounded-xl transition-colors"
         >
           <X className="w-6 h-6" />
         </button>
@@ -98,35 +86,42 @@ export default function SearchPage() {
         </h2>
       </div>
 
-      <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-        {/* ... JSX chọn triệu chứng (giữ nguyên) ... */}
+      <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-purple-100">
         <label className="block text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-purple-500" />
           Bạn đang gặp triệu chứng gì?
         </label>
+        
         {selectedSymptoms.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {selectedSymptoms.map((symptom) => (
-              <span key={symptom} className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md">
+              <span
+                key={symptom}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md"
+              >
                 {symptom}
-                <button onClick={() => removeSymptom(symptom)} className="hover:bg-white/20 rounded-full p-1">
+                <button onClick={() => removeSymptom(symptom)} className="hover:bg-white/20 rounded-full p-1 transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </span>
             ))}
           </div>
         )}
+
         <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto">
           {commonSymptoms.filter(s => !selectedSymptoms.includes(s)).map((symptom) => (
-            <button key={symptom} onClick={() => addSymptom(symptom)} className="px-4 py-2 bg-gray-50 hover:bg-purple-50 border border-gray-200 hover:border-purple-300 rounded-full text-sm font-medium transition-all">
+            <button
+              key={symptom}
+              onClick={() => addSymptom(symptom)}
+              className="px-4 py-2 bg-gray-50 hover:bg-purple-50 border border-gray-200 hover:border-purple-300 rounded-full text-sm font-medium transition-all hover:shadow-md"
+            >
               + {symptom}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
-        {/* ... JSX chọn vị trí (giữ nguyên) ... */}
+      <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-purple-100">
         <label className="block text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
           <MapPin className="w-5 h-5 text-blue-500" />
           Vị trí của bạn
@@ -137,20 +132,35 @@ export default function SearchPage() {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Nhập địa chỉ hoặc tự động lấy"
-            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none"
+            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors"
           />
-          <button onClick={getCurrentLocation} className="px-5 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-xl hover:shadow-lg transition-all active:scale-95">
+          <button
+            onClick={getCurrentLocation}
+            className="px-5 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-xl hover:shadow-lg transition-all active:scale-95"
+          >
             <MapPin className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       <button
-        onClick={handleSearch} // 👈 Thay đổi hàm xử lý
+        onClick={handleSearch}
         disabled={isSearching || selectedSymptoms.length === 0}
-        className="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 active:scale-95"
+        className="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
       >
-        {isSearching ? 'Đang tìm kiếm...' : 'Tìm thuốc phù hợp ✨'}
+        <span className="flex items-center justify-center gap-2">
+          {isSearching ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Đang tìm kiếm...
+            </>
+          ) : (
+            <>
+              <Search className="w-5 h-5" />
+              Tìm thuốc phù hợp
+            </>
+          )}
+        </span>
       </button>
     </div>
   );
