@@ -5,7 +5,7 @@
 // ✅ ĐỌC TOKEN TỪ BIẾN MÔI TRƯỜNG
 const API_CONFIG = {
   huggingface: {
-    token: process.env.REACT_APP_HUGGINGFACE_TOKEN || '',
+    token: process.env.REACT_APP_HUGGINGFACE_TOKEN || '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',
     url: process.env.REACT_APP_HUGGINGFACE_URL || 'https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-1B-Instruct'
   }
 };
