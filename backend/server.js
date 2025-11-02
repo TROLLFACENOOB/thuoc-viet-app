@@ -18,6 +18,7 @@ app.use(express.json());
 // KIỂM TRA API KEY
 // ============================================
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GEOAPIFY_KEY = process.env.GEOAPIFY_KEY; // 👈 Thêm Geoapify key
 
 if (!GROQ_API_KEY) {
   console.error('❌ GROQ_API_KEY không tồn tại!');
@@ -30,6 +31,11 @@ if (!GROQ_API_KEY.startsWith('gsk_')) {
   console.error('❌ GROQ_API_KEY không hợp lệ!');
   console.error('   Key phải bắt đầu bằng: gsk_');
   process.exit(1);
+}
+
+// Cảnh báo nếu thiếu Geoapify (không bắt buộc vì có fallback OSM)
+if (!GEOAPIFY_KEY) {
+  console.warn('⚠️  GEOAPIFY_KEY chưa có - sẽ dùng OpenStreetMap (free)');
 }
 
 // ============================================
@@ -168,7 +174,6 @@ LƯU Ý: Đây là tư vấn tham khảo, không thay thế bác sĩ.`;
   } catch (error) {
     console.error('❌ Chat error:', error);
     
-    // Phân loại lỗi để trả về message phù hợp
     let userMessage = 'Xin lỗi, tôi không thể trả lời lúc này.';
     
     if (error.message.includes('API Key')) {
@@ -188,7 +193,7 @@ LƯU Ý: Đây là tư vấn tham khảo, không thay thế bác sĩ.`;
 });
 
 // ============================================
-// ROUTE: TÌM THUỐC THEO TRIỆU CHỨNG
+// ROUTE: TÌM THUỐC THEO TRIỆU CHỨNG - FIXED
 // ============================================
 
 app.post('/api/search-medicine', async (req, res) => {
@@ -204,186 +209,12 @@ app.post('/api/search-medicine', async (req, res) => {
 
     console.log('🔍 Search Medicine:', symptoms);
 
-    const prompt = `Bạn là dược sĩ chuyên nghiệp. Phân tích triệu chứng và đề xuất thuốc.
-
-TRIỆU CHỨNG: ${symptoms.join(', ')}
-
-YÊU CẦU: Trả lời ĐÚNG format JSON (KHÔNG thêm markdown, KHÔNG giải thích):
-
-{
-  "diagnosis": "Chẩn đoán sơ bộ ngắn gọn (1-2 câu)",
-  "severity": "low hoặc medium hoặc high",
-  "westernMeds": [
-    {
-      "name": "Tên thuốc cụ thể (VD: Paracetamol 500mg)",
-      "price": "Giá ước tính VNĐ (VD: 15,000đ)",
-      "usage": "Cách dùng chi tiết (VD: Uống 1-2 viên khi đau, cách 4-6 giờ, tối đa 8 viên/ngày)"
-    }
-  ],
-  "traditionalMeds": [
-    {
-      "name": "Tên phương pháp dân gian",
-      "ingredients": "Thành phần/nguyên liệu",
-      "effect": "Tác dụng"
-    }
-  ],
-  "advice": "Lời khuyên chăm sóc tại nhà (ngắn gọn)",
-  "warning": "Cảnh báo quan trọng (khi nào cần đến bác sĩ)"
-}
-
-CHÚ Ý:
-- Đề xuất 3-5 thuốc tây phù hợp nhất
-- Đề xuất 2-3 phương pháp dân gian an toàn
-- Giá thuốc thực tế tại Việt Nam
-- Cách dùng rõ ràng, dễ hiểu`;
-
-    const messages = [
-      { 
-        role: 'system', 
-        content: 'Bạn là dược sĩ. Chỉ trả lời bằng JSON hợp lệ, KHÔNG thêm markdown (```json), KHÔNG giải thích thêm.' 
-      },
-      { role: 'user', content: prompt }
-    ];
-
-    const result = await callGroqAPI(messages, 2000);
-    let text = result.text;
-
-    // Loại bỏ markdown
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    // Tìm JSON
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('AI không trả về JSON hợp lệ');
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    res.json({
-      success: true,
-      data: {
-        diagnosis: parsed.diagnosis || 'Không xác định được triệu chứng',
-        severity: parsed.severity || 'medium',
-        westernMeds: (parsed.westernMeds || []).slice(0, 5),
-        traditionalMeds: (parsed.traditionalMeds || []).slice(0, 3),
-        advice: parsed.advice || 'Nghỉ ngơi đầy đủ, uống nhiều nước.',
-        warning: parsed.warning || 'Nếu triệu chứng nặng hoặc kéo dài >3 ngày, đến bác sĩ.'
-      },
-      usage: result.usage
-    });
-
-  } catch (error) {
-    console.error('❌ Search medicine error:', error);
-    
-    res.status(500).json({ 
-      success: false, 
-      error: 'Không thể phân tích triệu chứng. Vui lòng thử lại.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-});
-
-// ============================================
-// ROUTE: HEALTH CHECK
-// ============================================
-
-app.get('/health', (req, res) => {
-  const hasToken = !!GROQ_API_KEY;
-  const tokenValid = GROQ_API_KEY?.startsWith('gsk_');
-  
-  res.json({ 
-    status: 'ok',
-    api: 'Groq AI',
-    model: 'Llama 3.3 70B Versatile',
-    timestamp: new Date().toISOString(),
-    token: hasToken && tokenValid ? '✅ Valid' : '❌ Invalid/Missing'
-  });
-});
-
-// ============================================
-// ROUTE: TEST GROQ CONNECTION
-// ============================================
-
-app.get('/test-groq', async (req, res) => {
-  try {
-    const messages = [
-      { role: 'user', content: 'Chào bạn! Hãy trả lời bằng tiếng Việt: 2+2=?' }
-    ];
-    
-    const result = await callGroqAPI(messages, 50);
-    
-    res.json({
-      success: true,
-      message: 'Groq API hoạt động tốt!',
-      response: result.text,
-      model: result.model,
-      usage: result.usage
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Groq API không hoạt động',
-      details: error.message
-    });
-  }
-});
-
-// ============================================
-// ERROR HANDLER
-// ============================================
-
-app.use((err, req, res, next) => {
-  console.error('Server Error:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Lỗi server',
-    details: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// ============================================
-// START SERVER
-// ============================================
-
-app.listen(PORT, () => {
-  console.log('═══════════════════════════════════════');
-  console.log('🚀 SERVER STARTED');
-  console.log('═══════════════════════════════════════');
-  console.log(`📍 URL: http://localhost:${PORT}`);
-  console.log(`🤖 API: Groq AI`);
-  console.log(`🧠 Model: Llama 3.3 70B Versatile`);
-  console.log(`🔑 Token: ${GROQ_API_KEY ? '✅ Loaded' : '❌ Missing'}`);
-  console.log('═══════════════════════════════════════');
-  console.log('📡 Test Endpoints:');
-  console.log('   http://localhost:5000/health');
-  console.log('   http://localhost:5000/test-groq');
-  console.log('═══════════════════════════════════════');
-});
-
-// ============================================
-// ROUTE: TÌM THUỐC - CẢI TIẾN ĐẦY ĐỦ
-// ============================================
-// Thêm vào backend/server.js
-
-app.post('/api/search-medicine', async (req, res) => {
-  try {
-    const { symptoms } = req.body;
-
-    if (!symptoms || symptoms.length === 0) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Thiếu triệu chứng' 
-      });
-    }
-
-    console.log('🔍 Search Medicine:', symptoms);
-
-    // Prompt cải tiến - chi tiết hơn
+    // PROMPT CẢI TIẾN - CHI TIẾT HƠN
     const prompt = `Bạn là dược sĩ chuyên nghiệp tại Việt Nam. Phân tích triệu chứng và đề xuất thuốc.
 
 TRIỆU CHỨNG: ${symptoms.join(', ')}
 
-YÊU CẦU: Trả lời ĐÚNG format JSON (KHÔNG thêm markdown \`\`\`json, KHÔNG giải thích):
+YÊU CẦU: Trả lời ĐÚNG format JSON (KHÔNG thêm markdown, KHÔNG giải thích):
 
 {
   "diagnosis": "Chẩn đoán sơ bộ chi tiết (2-3 câu, giải thích nguyên nhân)",
@@ -424,13 +255,13 @@ QUAN TRỌNG: Trả lời CHÍNH XÁC JSON, không thêm bất kỳ text nào kh
       { role: 'user', content: prompt }
     ];
 
-    // Gọi Groq với retry
+    // Gọi Groq với retry + token cao hơn
     const result = await callGroqAPI(messages, 2500, 3);
     let text = result.text;
 
-    console.log('📝 Raw Groq Response:', text.substring(0, 200) + '...');
+    console.log('📝 Raw Groq Response (first 300 chars):', text.substring(0, 300));
 
-    // Làm sạch response
+    // Làm sạch response - QUAN TRỌNG
     text = text
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
@@ -441,7 +272,7 @@ QUAN TRỌNG: Trả lời CHÍNH XÁC JSON, không thêm bất kỳ text nào kh
     // Parse JSON
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('AI không trả về JSON hợp lệ. Raw: ' + text);
+      throw new Error('AI không trả về JSON hợp lệ. Raw: ' + text.substring(0, 200));
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
@@ -555,4 +386,156 @@ QUAN TRỌNG: Trả lời CHÍNH XÁC JSON, không thêm bất kỳ text nào kh
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+});
+
+// ============================================
+// ROUTE: TEST GEOAPIFY (THAY YOUR_KEY)
+// ============================================
+
+app.get('/test-geoapify', async (req, res) => {
+  try {
+    const GEOAPIFY_KEY = 'YOUR_GEOAPIFY_API_KEY'; // 👈 THAY KEY Ở ĐÂY
+    
+    console.log('🔍 Testing Geoapify API...');
+    
+    // Test 1: Geocoding
+    const address = 'Pharmacity, Nguyễn Văn Linh, Quận 7, TP.HCM';
+    const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(address)}&format=json&apiKey=${GEOAPIFY_KEY}`;
+    
+    console.log('📍 Test 1: Geocoding address...');
+    const geocodeRes = await fetch(geocodeUrl);
+    
+    if (!geocodeRes.ok) {
+      throw new Error(`Geocoding failed: ${geocodeRes.status}`);
+    }
+    
+    const geocodeData = await geocodeRes.json();
+    console.log('✅ Geocoding successful:', geocodeData.results?.[0]?.formatted);
+    
+    // Test 2: Places API (tìm pharmacy)
+    const lat = 10.8231;
+    const lon = 106.6297;
+    const placesUrl = `https://api.geoapify.com/v2/places?categories=healthcare.pharmacy&filter=circle:${lon},${lat},3000&limit=5&apiKey=${GEOAPIFY_KEY}`;
+    
+    console.log('🏥 Test 2: Finding pharmacies...');
+    const placesRes = await fetch(placesUrl);
+    
+    if (!placesRes.ok) {
+      throw new Error(`Places API failed: ${placesRes.status}`);
+    }
+    
+    const placesData = await placesRes.json();
+    console.log('✅ Found pharmacies:', placesData.features?.length || 0);
+    
+    res.json({
+      success: true,
+      message: 'Geoapify API hoạt động tốt!',
+      tests: {
+        geocoding: {
+          status: 'OK',
+          result: geocodeData.results?.[0]?.formatted || 'No result',
+          coordinates: geocodeData.results?.[0] ? {
+            lat: geocodeData.results[0].lat,
+            lon: geocodeData.results[0].lon
+          } : null
+        },
+        places: {
+          status: 'OK',
+          found: placesData.features?.length || 0,
+          pharmacies: placesData.features?.slice(0, 3).map(p => ({
+            name: p.properties.name || 'Unnamed',
+            address: p.properties.formatted || 'No address',
+            distance: p.properties.distance ? `${Math.round(p.properties.distance)}m` : 'Unknown'
+          })) || []
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Geoapify test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Geoapify API không hoạt động',
+      details: error.message,
+      hint: 'Kiểm tra lại API Key hoặc xem console log'
+    });
+  }
+});
+
+// ============================================
+// ROUTE: HEALTH CHECK
+// ============================================
+
+app.get('/health', (req, res) => {
+  const hasToken = !!GROQ_API_KEY;
+  const tokenValid = GROQ_API_KEY?.startsWith('gsk_');
+  
+  res.json({ 
+    status: 'ok',
+    api: 'Groq AI',
+    model: 'Llama 3.3 70B Versatile',
+    timestamp: new Date().toISOString(),
+    token: hasToken && tokenValid ? '✅ Valid' : '❌ Invalid/Missing'
+  });
+});
+
+// ============================================
+// ROUTE: TEST GROQ CONNECTION
+// ============================================
+
+app.get('/test-groq', async (req, res) => {
+  try {
+    const messages = [
+      { role: 'user', content: 'Chào bạn! Hãy trả lời bằng tiếng Việt: 2+2=?' }
+    ];
+    
+    const result = await callGroqAPI(messages, 50);
+    
+    res.json({
+      success: true,
+      message: 'Groq API hoạt động tốt!',
+      response: result.text,
+      model: result.model,
+      usage: result.usage
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Groq API không hoạt động',
+      details: error.message
+    });
+  }
+});
+
+// ============================================
+// ERROR HANDLER
+// ============================================
+
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Lỗi server',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// ============================================
+// START SERVER
+// ============================================
+
+app.listen(PORT, () => {
+  console.log('═══════════════════════════════════════');
+  console.log('🚀 SERVER STARTED');
+  console.log('═══════════════════════════════════════');
+  console.log(`📍 URL: http://localhost:${PORT}`);
+  console.log(`🤖 API: Groq AI`);
+  console.log(`🧠 Model: Llama 3.3 70B Versatile`);
+  console.log(`🔑 Token: ${GROQ_API_KEY ? '✅ Loaded' : '❌ Missing'}`);
+  console.log('═══════════════════════════════════════');
+  console.log('📡 Test Endpoints:');
+  console.log('   http://localhost:5000/health');
+  console.log('   http://localhost:5000/test-groq');
+  console.log('   http://localhost:5000/test-geoapify');
+  console.log('═══════════════════════════════════════');
 });
