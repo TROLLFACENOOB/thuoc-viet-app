@@ -1,19 +1,26 @@
 // ============================================
-// MEDICINE SERVICE - PHIÊN BẢN ĐÃ SỬA
+// MEDICINE SERVICE - PHIÊN BẢN BẢO MẬT
 // ============================================
 
+// ✅ ĐỌC TOKEN TỪ BIẾN MÔI TRƯỜNG
 const API_CONFIG = {
   huggingface: {
-    token: '' // ← Thay token của bạn vào đây
+    token: process.env.REACT_APP_HUGGINGFACE_TOKEN || '',
+    url: process.env.REACT_APP_HUGGINGFACE_URL || 'https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-1B-Instruct'
   }
 };
+
+// ⚠️ CẢNH BÁO NẾU THIẾU TOKEN
+if (!API_CONFIG.huggingface.token) {
+  console.warn('⚠️ CẢNH BÁO: Chưa có token Hugging Face. Tính năng AI sẽ không hoạt động.');
+  console.warn('Vui lòng tạo file .env và thêm: REACT_APP_HUGGINGFACE_TOKEN=your_token');
+}
 
 // ============================================
 // DATABASE TRIỆU CHỨNG (LUÔN HOẠT ĐỘNG)
 // ============================================
 
 const SYMPTOMS_DB = {
-  // ===== 1. ĐAU ĐẦU =====
   'đau đầu': {
     westernMeds: [
       { name: 'Paracetamol 500mg', price: '15,000đ', usage: 'Uống 1-2 viên khi đau, cách 4-6 giờ, tối đa 8 viên/ngày' },
@@ -21,223 +28,142 @@ const SYMPTOMS_DB = {
       { name: 'Aspirin 500mg', price: '20,000đ', usage: 'Uống 1-2 viên sau ăn, cách 4-6 giờ' }
     ],
     traditionalMeds: [
-      { name: 'Trà gừng mật ong', ingredients: 'Gừng tươi 20g, mật ong 2 thìa', effect: 'Giảm đau đầu, ấm cơ thể, lưu thông khí huyết' },
-      { name: 'Bạc hà', ingredients: 'Lá bạc hà tươi 10g', effect: 'Giảm đau đầu, thư giãn tinh thần' },
-      { name: 'Massage huyệt thái dương', ingredients: 'Dùng tay massage nhẹ', effect: 'Giảm đau đầu tức thì' }
+      { name: 'Trà gừng mật ong', ingredients: 'Gừng tươi 20g, mật ong 2 thìa', effect: 'Giảm đau đầu, ấm cơ thể' },
+      { name: 'Bạc hà', ingredients: 'Lá bạc hà tươi 10g', effect: 'Giảm đau đầu, thư giãn' }
     ]
   },
-
-  // ===== 2. SỐT =====
   'sốt': {
     westernMeds: [
-      { name: 'Paracetamol 500mg', price: '15,000đ', usage: 'Uống 1-2 viên khi sốt trên 38.5°C, cách 4-6 giờ' },
-      { name: 'Efferalgan 500mg', price: '30,000đ', usage: 'Hòa 1 viên sủi vào nước, uống khi sốt' },
-      { name: 'Hapacol 325mg', price: '18,000đ', usage: 'Uống 1-2 viên khi sốt, cách 4-6 giờ' }
+      { name: 'Paracetamol 500mg', price: '15,000đ', usage: 'Uống 1-2 viên khi sốt trên 38.5°C' },
+      { name: 'Efferalgan 500mg', price: '30,000đ', usage: 'Hòa 1 viên sủi vào nước' }
     ],
     traditionalMeds: [
-      { name: 'Lá tía tô sắc', ingredients: 'Lá tía tô tươi 50g, nước 500ml', effect: 'Giải cảm, giảm sốt nhẹ, tăng đề kháng' },
-      { name: 'Nước chanh muối', ingredients: 'Chanh tươi, muối, đường', effect: 'Bù nước, hạ nhiệt, bổ sung điện giải' },
-      { name: 'Chườm mát', ingredients: 'Khăn mát, nước lạnh', effect: 'Hạ nhiệt nhanh cho cơ thể' }
+      { name: 'Lá tía tô sắc', ingredients: 'Lá tía tô 50g', effect: 'Giải cảm, hạ sốt nhẹ' }
     ]
   },
-
-  // ===== 3. HO =====
   'ho': {
     westernMeds: [
       { name: 'Prospan', price: '45,000đ', usage: 'Uống 5ml x 3 lần/ngày sau ăn' },
-      { name: 'Bisolvon', price: '35,000đ', usage: 'Uống 1 viên x 3 lần/ngày, giúp long đờm' },
-      { name: 'Euviphyllin', price: '40,000đ', usage: 'Uống theo chỉ định bác sĩ, giảm co thắt phế quản' }
+      { name: 'Bisolvon', price: '35,000đ', usage: 'Uống 1 viên x 3 lần/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Mật ong chanh', ingredients: 'Mật ong nguyên chất 2 thìa, chanh tươi', effect: 'Làm dịu họng, giảm ho, kháng khuẩn' },
-      { name: 'Nước cam tươi', ingredients: 'Cam tươi vắt, không đường', effect: 'Bổ sung vitamin C, tăng sức đề kháng' },
-      { name: 'Lá lốt hấp', ingredients: 'Lá lốt tươi 30g', effect: 'Tiêu đờm, giảm ho hiệu quả' }
+      { name: 'Mật ong chanh', ingredients: 'Mật ong 2 thìa, chanh tươi', effect: 'Làm dịu họng, giảm ho' }
     ]
   },
-
-  // ===== 4. SỔ MŨI =====
   'sổ mũi': {
     westernMeds: [
       { name: 'Decolgen', price: '20,000đ', usage: 'Uống 1 viên x 3 lần/ngày' },
-      { name: 'Actifed', price: '25,000đ', usage: 'Uống 1 viên khi cần, cách 4-6 giờ' },
-      { name: 'Rhinathiol', price: '50,000đ', usage: 'Uống 10ml x 3 lần/ngày' }
+      { name: 'Actifed', price: '25,000đ', usage: 'Uống 1 viên khi cần' }
     ],
     traditionalMeds: [
-      { name: 'Hành tím mật ong', ingredients: 'Hành tím 3 củ, mật ong', effect: 'Giảm nghẹt mũi, sát khuẩn' },
-      { name: 'Trà gừng', ingredients: 'Gừng tươi 30g, đường phèn', effect: 'Ấm cơ thể, giảm sổ mũi' },
-      { name: 'Hơi nước nóng', ingredients: 'Nước nóng + lá bạc hà', effect: 'Thông mũi, giảm nghẹt' }
+      { name: 'Hành tím mật ong', ingredients: 'Hành tím 3 củ, mật ong', effect: 'Giảm nghẹt mũi' }
     ]
   },
-
-  // ===== 5. ĐAU BỤNG =====
   'đau bụng': {
     westernMeds: [
-      { name: 'Buscopan', price: '35,000đ', usage: 'Uống 1-2 viên khi đau, giảm co thắt' },
-      { name: 'Smecta', price: '25,000đ', usage: 'Pha 1 gói vào nước, uống 3 lần/ngày' },
-      { name: 'De-Nol', price: '120,000đ', usage: 'Uống trước bữa ăn 30 phút, bảo vệ niêm mạc dạ dày' }
+      { name: 'Buscopan', price: '35,000đ', usage: 'Uống 1-2 viên khi đau' },
+      { name: 'Smecta', price: '25,000đ', usage: 'Pha 1 gói vào nước, uống 3 lần/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Trà gừng ấm', ingredients: 'Gừng tươi 20g, đường', effect: 'Giảm đau bụng, ấm dạ dày, tiêu hóa tốt' },
-      { name: 'Nước chanh ấm', ingredients: 'Chanh tươi, mật ong', effect: 'Hỗ trợ tiêu hóa, giảm đầy hơi' }
+      { name: 'Trà gừng ấm', ingredients: 'Gừng tươi 20g', effect: 'Giảm đau bụng, ấm dạ dày' }
     ]
   },
-
-  // ===== 6. TIÊU CHẢY =====
   'tiêu chảy': {
     westernMeds: [
-      { name: 'Smecta', price: '25,000đ', usage: 'Pha 1 gói vào nước, uống 3 lần/ngày' },
-      { name: 'Bioflora', price: '40,000đ', usage: 'Uống 1-2 gói/ngày, bổ sung men vi sinh' },
-      { name: 'Oresol', price: '15,000đ', usage: 'Pha 1 gói vào 200ml nước, uống nhiều lần trong ngày' }
+      { name: 'Smecta', price: '25,000đ', usage: 'Pha 1 gói, uống 3 lần/ngày' },
+      { name: 'Bioflora', price: '40,000đ', usage: 'Uống 1-2 gói/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Nước gạo rang', ingredients: 'Gạo rang vàng 50g, nước 500ml', effect: 'Cầm tiêu chảy, bù nước' },
-      { name: 'Lá ổi non', ingredients: 'Lá ổi non 20g sắc nước', effect: 'Chống tiêu chảy, sát khuẩn đường ruột' }
+      { name: 'Nước gạo rang', ingredients: 'Gạo rang 50g', effect: 'Cầm tiêu chảy' }
     ]
   },
-
-  // ===== 7. BUỒN NÔN =====
   'buồn nôn': {
     westernMeds: [
       { name: 'Motilium', price: '45,000đ', usage: 'Uống 1 viên trước ăn 15-30 phút' },
-      { name: 'Vogalen', price: '35,000đ', usage: 'Uống khi buồn nôn, cách 6-8 giờ' },
-      { name: 'Primperan', price: '30,000đ', usage: 'Uống theo chỉ định bác sĩ' }
+      { name: 'Vogalen', price: '35,000đ', usage: 'Uống khi buồn nôn' }
     ],
     traditionalMeds: [
-      { name: 'Trà gừng tươi', ingredients: 'Gừng tươi 15g, mật ong', effect: 'Giảm buồn nôn, ấm dạ dày' },
-      { name: 'Chanh muối', ingredients: 'Chanh muối 1 trái', effect: 'Giảm nôn nhanh, kích thích tiêu hóa' },
-      { name: 'Lá bạc hà ngửi', ingredients: 'Tinh dầu bạc hà', effect: 'Giảm buồn nôn tức thì' }
+      { name: 'Trà gừng tươi', ingredients: 'Gừng tươi 15g, mật ong', effect: 'Giảm buồn nôn' }
     ]
   },
-
-  // ===== 8. MỆT MỎI =====
   'mệt mỏi': {
     westernMeds: [
       { name: 'Vitamin B Complex', price: '50,000đ', usage: 'Uống 1 viên/ngày sau ăn' },
-      { name: 'Berocca', price: '80,000đ', usage: 'Hòa 1 viên sủi vào nước, uống buổi sáng' },
-      { name: 'Redoxon', price: '60,000đ', usage: 'Uống 1 viên/ngày, bổ sung vitamin C' }
+      { name: 'Berocca', price: '80,000đ', usage: 'Hòa 1 viên sủi' }
     ],
     traditionalMeds: [
-      { name: 'Nước mía tươi', ingredients: 'Mía tươi vắt', effect: 'Bổ sung năng lượng nhanh, giải nhiệt' },
-      { name: 'Trà sâm', ingredients: 'Sâm tươi hoặc sâm khô', effect: 'Bồi bổ sức khỏe, tăng sinh lực' },
-      { name: 'Nghỉ ngơi đầy đủ', ingredients: 'Ngủ 7-8 giờ/đêm', effect: 'Phục hồi sức lực tự nhiên' }
+      { name: 'Nước mía tươi', ingredients: 'Mía tươi vắt', effect: 'Bổ sung năng lượng' }
     ]
   },
-
-  // ===== 9. ĐAU HỌNG =====
   'đau họng': {
     westernMeds: [
-      { name: 'Strepsils', price: '30,000đ', usage: 'Ngậm 1 viên mỗi 2-3 giờ, tối đa 8 viên/ngày' },
-      { name: 'Betadine họng', price: '45,000đ', usage: 'Súc miệng 3-4 lần/ngày' },
-      { name: 'Pharyndol', price: '35,000đ', usage: 'Ngậm 1 viên khi đau họng' }
+      { name: 'Strepsils', price: '30,000đ', usage: 'Ngậm 1 viên mỗi 2-3 giờ' },
+      { name: 'Betadine họng', price: '45,000đ', usage: 'Súc miệng 3-4 lần/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Nước muối ấm', ingredients: 'Muối 1 thìa, nước ấm 200ml', effect: 'Sát khuẩn, giảm đau họng, làm sạch họng' },
-      { name: 'Mật ong chanh', ingredients: 'Mật ong 2 thìa, chanh', effect: 'Làm dịu họng, kháng viêm' },
-      { name: 'Trà cam thảo', ingredients: 'Cam thảo 10g sắc nước', effect: 'Giảm viêm họng, tiêu đờm' }
+      { name: 'Nước muối ấm', ingredients: 'Muối 1 thìa, nước ấm', effect: 'Sát khuẩn, giảm đau họng' }
     ]
   },
-
-  // ===== 10. KHÓ THỞ =====
   'khó thở': {
     westernMeds: [
-      { name: 'Ventolin (Xịt)', price: '120,000đ', usage: 'Xịt 1-2 nhát khi khó thở (PHẢI CÓ CHỈ ĐỊNH BÁC SĨ)' },
-      { name: 'Theophyllin', price: '50,000đ', usage: 'Uống theo đơn bác sĩ' },
-      { name: 'Oxy hỗ trợ', price: 'Tùy bệnh viện', usage: 'Sử dụng tại cơ sở y tế' }
+      { name: 'Ventolin (Xịt)', price: '120,000đ', usage: 'CHỈ DÙNG THEO ĐƠN BÁC SĨ' }
     ],
     traditionalMeds: [
-      { name: 'Hít thở sâu', ingredients: 'Hít thở đều đặn', effect: 'Giãn phế quản, giảm căng thẳng' },
-      { name: 'Trà bạc hà', ingredients: 'Lá bạc hà tươi', effect: 'Thông đường thở, giảm tức ngực' },
-      { name: '⚠️ GỌI 115 NẾU NẶNG', ingredients: 'Đến bệnh viện ngay', effect: 'Khó thở có thể nguy hiểm!' }
+      { name: '⚠️ GỌI 115 NGAY', ingredients: 'Khó thở nguy hiểm!', effect: 'Đến bệnh viện' }
     ]
   },
-
-  // ===== 11. CHÓNG MẶT =====
   'chóng mặt': {
     westernMeds: [
-      { name: 'Vastarel', price: '150,000đ', usage: 'Uống theo đơn bác sĩ, cải thiện tuần hoàn não' },
-      { name: 'Ginkgo Biloba', price: '180,000đ', usage: 'Uống 1 viên x 2 lần/ngày' },
-      { name: 'Betaserc', price: '120,000đ', usage: 'Uống theo chỉ định, trị chóng mặt' }
+      { name: 'Vastarel', price: '150,000đ', usage: 'Theo đơn bác sĩ' }
     ],
     traditionalMeds: [
-      { name: 'Nước gừng mật ong', ingredients: 'Gừng tươi, mật ong', effect: 'Lưu thông khí huyết, giảm chóng mặt' },
-      { name: 'Ngồi yên, hít thở sâu', ingredients: 'Nghỉ ngơi tại chỗ', effect: 'Ổn định huyết áp' },
-      { name: 'Uống nước', ingredients: 'Nước lọc', effect: 'Bù nước, tránh mất nước gây chóng mặt' }
+      { name: 'Nước gừng mật ong', ingredients: 'Gừng tươi, mật ong', effect: 'Giảm chóng mặt' }
     ]
   },
-
-  // ===== 12. MẤT NGỦ =====
   'mất ngủ': {
     westernMeds: [
-      { name: 'Seduxen 5mg', price: '50,000đ', usage: 'CHỈ DÙNG THEO ĐƠN BÁC SĨ' },
-      { name: 'Melatonin', price: '200,000đ', usage: 'Uống 1 viên trước ngủ 30 phút' },
-      { name: 'Nhất Ngủ', price: '80,000đ', usage: 'Uống 2 viên trước ngủ' }
+      { name: 'Melatonin', price: '200,000đ', usage: 'Uống trước ngủ 30 phút' }
     ],
     traditionalMeds: [
-      { name: 'Trà hoa cúc', ingredients: 'Hoa cúc khô 10g', effect: 'Thư giãn tinh thần, dễ ngủ' },
-      { name: 'Sữa ấm mật ong', ingredients: 'Sữa tươi, mật ong', effect: 'Giúp ngủ ngon, bổ dưỡng' },
-      { name: 'Tắm nước ấm', ingredients: 'Nước ấm trước ngủ', effect: 'Thư giãn cơ thể, dễ đi vào giấc ngủ' }
+      { name: 'Trà hoa cúc', ingredients: 'Hoa cúc khô 10g', effect: 'Thư giãn, dễ ngủ' }
     ]
   },
-
-  // ===== 13. ĐAU LƯNG =====
   'đau lưng': {
     westernMeds: [
-      { name: 'Ibuprofen 400mg', price: '25,000đ', usage: 'Uống 1 viên x 3 lần/ngày sau ăn' },
-      { name: 'Paracetamol 500mg', price: '15,000đ', usage: 'Uống khi đau' },
-      { name: 'Gel bôi Voltaren', price: '80,000đ', usage: 'Bôi vùng đau 2-3 lần/ngày' }
+      { name: 'Ibuprofen 400mg', price: '25,000đ', usage: 'Uống 1 viên x 3 lần/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Chườm nóng', ingredients: 'Túi chườm nóng/muối rang', effect: 'Giảm đau, giãn cơ' },
-      { name: 'Dầu gió xoa bóp', ingredients: 'Dầu gió xanh, massage nhẹ', effect: 'Lưu thông máu, giảm đau' },
-      { name: 'Nghỉ ngơi đúng tư thế', ingredients: 'Nằm ngửa, gối ở đúng độ cao', effect: 'Giảm áp lực lên cột sống' }
+      { name: 'Chườm nóng', ingredients: 'Túi chườm/muối rang', effect: 'Giảm đau, giãn cơ' }
     ]
   },
-
-  // ===== 14. ĐAU KHỚP =====
   'đau khớp': {
     westernMeds: [
-      { name: 'Glucosamine 1500mg', price: '350,000đ', usage: 'Uống 1 viên/ngày, bổ khớp dài hạn' },
-      { name: 'Voltaren Gel', price: '80,000đ', usage: 'Bôi vùng đau 2-3 lần/ngày' },
-      { name: 'Meloxicam 7.5mg', price: '50,000đ', usage: 'Uống 1 viên/ngày sau ăn' }
+      { name: 'Glucosamine 1500mg', price: '350,000đ', usage: 'Uống 1 viên/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Lá lốt đắp', ingredients: 'Lá lốt giã nát, đắp vùng đau', effect: 'Giảm đau khớp, chống viêm' },
-      { name: 'Ngâm chân nước ấm', ingredients: 'Nước ấm + muối', effect: 'Giảm đau, thư giãn khớp' },
-      { name: 'Tập vận động nhẹ', ingredients: 'Đi bộ, bơi lội', effect: 'Tăng cường sức khỏe khớp' }
+      { name: 'Lá lốt đắp', ingredients: 'Lá lốt giã nát', effect: 'Giảm đau khớp' }
     ]
   },
-
-  // ===== 15. NGỨA DA =====
   'ngứa da': {
     westernMeds: [
-      { name: 'Loratadine 10mg', price: '30,000đ', usage: 'Uống 1 viên/ngày, chống dị ứng' },
-      { name: 'Kem Elocon', price: '120,000đ', usage: 'Bôi vùng ngứa 1-2 lần/ngày' },
-      { name: 'Cetirizine 10mg', price: '25,000đ', usage: 'Uống 1 viên/ngày buổi tối' }
+      { name: 'Loratadine 10mg', price: '30,000đ', usage: 'Uống 1 viên/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Lá lốt giã đắp', ingredients: 'Lá lốt tươi giã nát', effect: 'Giảm ngứa, kháng khuẩn' },
-      { name: 'Nước lá trầu không', ingredients: 'Lá trầu không sắc', effect: 'Sát khuẩn, giảm ngứa' },
-      { name: 'Tắm nước ấm', ingredients: 'Tránh nước quá nóng', effect: 'Làm dịu da, giảm ngứa' }
+      { name: 'Lá lốt giã đắp', ingredients: 'Lá lốt tươi', effect: 'Giảm ngứa' }
     ]
   },
-
-  // ===== 16. PHÁT BAN =====
   'phát ban': {
     westernMeds: [
-      { name: 'Cetirizine 10mg', price: '25,000đ', usage: 'Uống 1 viên/ngày' },
-      { name: 'Kem Betamethasone', price: '50,000đ', usage: 'Bôi vùng phát ban 2 lần/ngày' },
-      { name: 'Loratadine 10mg', price: '30,000đ', usage: 'Uống 1 viên/ngày, giảm dị ứng' }
+      { name: 'Cetirizine 10mg', price: '25,000đ', usage: 'Uống 1 viên/ngày' }
     ],
     traditionalMeds: [
-      { name: 'Lá trầu không giã', ingredients: 'Lá trầu không tươi', effect: 'Kháng khuẩn, giảm sưng' },
-      { name: 'Nước muối sinh lý rửa', ingredients: 'Nước muối 0.9%', effect: 'Làm sạch vết ban' },
-      { name: 'Tránh gãi', ingredients: 'Cắt móng tay ngắn', effect: 'Tránh nhiễm trùng' }
+      { name: 'Lá trầu không', ingredients: 'Lá trầu không tươi', effect: 'Kháng khuẩn' }
     ]
   }
 };
 
 // ============================================
-// HÀM TÌM THUỐC BẰNG AI (HUGGING FACE)
+// HÀM TÌM THUỐC BẰNG AI
 // ============================================
 
 async function analyzeSymptomsWithAI(symptoms) {
@@ -247,21 +173,19 @@ async function analyzeSymptomsWithAI(symptoms) {
 
 TRIỆU CHỨNG: ${symptoms.join(', ')}
 
-Trả lời ĐÚNG format JSON này (KHÔNG thêm text khác):
+Trả lời ĐÚNG format JSON (KHÔNG thêm text khác):
 {
-  "diagnosis": "Chẩn đoán ngắn gọn bằng tiếng Việt",
-  "severity": "low hoặc medium hoặc high",
+  "diagnosis": "Chẩn đoán ngắn gọn",
+  "severity": "low/medium/high",
   "westernMeds": [
-    {"name": "Tên thuốc đầy đủ", "price": "Giá VND", "usage": "Cách dùng chi tiết"}
+    {"name": "Tên thuốc", "price": "Giá", "usage": "Cách dùng"}
   ],
   "traditionalMeds": [
-    {"name": "Tên thuốc", "ingredients": "Thành phần", "effect": "Công dụng"}
+    {"name": "Tên", "ingredients": "Thành phần", "effect": "Công dụng"}
   ],
-  "advice": "Lời khuyên ngắn",
+  "advice": "Lời khuyên",
   "warning": "Cảnh báo"
-}
-
-CHỈ đề xuất thuốc KHÔNG KÊ ĐÔN, an toàn cho người lớn.`;
+}`;
 
   try {
     const response = await fetch(API_CONFIG.huggingface.url, {
@@ -275,23 +199,18 @@ CHỈ đề xuất thuốc KHÔNG KÊ ĐÔN, an toàn cho người lớn.`;
         parameters: {
           max_new_tokens: 800,
           temperature: 0.7,
-          return_full_text: false,
-          do_sample: true
+          return_full_text: false
         }
       })
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ AI API Error:', response.status, errorText);
       throw new Error(`API returned ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('📦 AI Raw Response:', data);
-    
-    // Parse response
     let text = '';
+    
     if (Array.isArray(data) && data[0]?.generated_text) {
       text = data[0].generated_text;
     } else if (data.generated_text) {
@@ -300,20 +219,16 @@ CHỈ đề xuất thuốc KHÔNG KÊ ĐÔN, an toàn cho người lớn.`;
       throw new Error('Invalid response format');
     }
 
-    // Tìm JSON trong response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No JSON found in response');
-    }
+    if (!jsonMatch) throw new Error('No JSON found');
 
     const parsed = JSON.parse(jsonMatch[0]);
     
-    // Validate dữ liệu
     if (!parsed.diagnosis || !parsed.westernMeds || !parsed.traditionalMeds) {
       throw new Error('Missing required fields');
     }
 
-    console.log('✅ AI Analysis successful:', parsed.diagnosis);
+    console.log('✅ AI Analysis successful');
     return {
       diagnosis: parsed.diagnosis,
       severity: parsed.severity || 'medium',
@@ -325,38 +240,34 @@ CHỈ đề xuất thuốc KHÔNG KÊ ĐÔN, an toàn cho người lớn.`;
 
   } catch (error) {
     console.error('❌ AI Analysis failed:', error.message);
-    throw error; // Ném lỗi để fallback
+    throw error;
   }
 }
 
 // ============================================
-// HÀM TÌM THUỐC TRONG DATABASE (FALLBACK)
+// HÀM TÌM THUỐC TRONG DATABASE
 // ============================================
 
 function findMedicinesBySymptoms(symptoms) {
-  console.log('💾 Using database fallback for:', symptoms);
+  console.log('💾 Using database for:', symptoms);
   
   const allWesternMeds = [];
   const allTraditionalMeds = [];
   let diagnosis = '';
 
-  // Tìm kiếm trong database
   symptoms.forEach(symptom => {
     const key = symptom.toLowerCase();
     
-    // Tìm khớp chính xác hoặc gần đúng
     Object.keys(SYMPTOMS_DB).forEach(dbKey => {
       if (key.includes(dbKey) || dbKey.includes(key)) {
         const data = SYMPTOMS_DB[dbKey];
         
-        // Thêm thuốc tây
         data.westernMeds.forEach(med => {
           if (!allWesternMeds.find(m => m.name === med.name)) {
             allWesternMeds.push(med);
           }
         });
         
-        // Thêm thuốc dân gian
         data.traditionalMeds.forEach(med => {
           if (!allTraditionalMeds.find(m => m.name === med.name)) {
             allTraditionalMeds.push(med);
@@ -368,16 +279,15 @@ function findMedicinesBySymptoms(symptoms) {
     });
   });
 
-  // Nếu không tìm thấy gì, trả về thuốc chung
   if (allWesternMeds.length === 0) {
     allWesternMeds.push(
-      { name: 'Paracetamol 500mg', price: '15,000đ', usage: 'Uống theo chỉ dẫn dược sĩ' }
+      { name: 'Paracetamol 500mg', price: '15,000đ', usage: 'Uống theo chỉ dẫn' }
     );
   }
   
   if (allTraditionalMeds.length === 0) {
     allTraditionalMeds.push(
-      { name: 'Nghỉ ngơi đầy đủ', ingredients: 'Uống nhiều nước', effect: 'Tăng sức đề kháng' }
+      { name: 'Nghỉ ngơi', ingredients: 'Uống nhiều nước', effect: 'Tăng đề kháng' }
     );
   }
 
@@ -392,45 +302,38 @@ function findMedicinesBySymptoms(symptoms) {
 }
 
 // ============================================
-// TÌM HIỆU THUỐC (NOMINATIM + OVERPASS)
+// TÌM HIỆU THUỐC
 // ============================================
 
 async function geocodeAddress(address) {
   if (!address || address.trim() === '') {
-    console.log('ℹ️ No address, using default location (TP.HCM)');
     return { lat: 10.8231, lon: 106.6297 };
   }
 
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
-    
     const response = await fetch(url, {
       headers: { 'User-Agent': 'ThuocVietApp/1.0' }
     });
-
     const data = await response.json();
     
     if (data && data.length > 0) {
-      const coords = {
+      return {
         lat: parseFloat(data[0].lat),
         lon: parseFloat(data[0].lon)
       };
-      console.log('✅ Geocoded:', coords);
-      return coords;
     }
     
-    console.log('⚠️ Address not found, using default');
     return { lat: 10.8231, lon: 106.6297 };
-    
   } catch (error) {
-    console.error('❌ Geocoding error:', error);
+    console.error('Geocoding error:', error);
     return { lat: 10.8231, lon: 106.6297 };
   }
 }
 
 async function findNearbyPharmacies(lat, lon) {
   try {
-    const radius = 2000; // 2km
+    const radius = 2000;
     const query = `
       [out:json][timeout:25];
       (
@@ -438,11 +341,7 @@ async function findNearbyPharmacies(lat, lon) {
         way["amenity"="pharmacy"](around:${radius},${lat},${lon});
       );
       out body;
-      >;
-      out skel qt;
     `;
-
-    console.log('🏥 Searching pharmacies near:', lat, lon);
 
     const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
@@ -452,7 +351,6 @@ async function findNearbyPharmacies(lat, lon) {
     const data = await response.json();
     
     if (!data.elements || data.elements.length === 0) {
-      console.log('⚠️ No pharmacies found via API, using fallback');
       return getFallbackPharmacies();
     }
 
@@ -479,11 +377,10 @@ async function findNearbyPharmacies(lat, lon) {
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, 5);
 
-    console.log('✅ Found', pharmacies.length, 'pharmacies');
     return pharmacies.length > 0 ? pharmacies : getFallbackPharmacies();
 
   } catch (error) {
-    console.error('❌ Find pharmacies error:', error);
+    console.error('Find pharmacies error:', error);
     return getFallbackPharmacies();
   }
 }
@@ -503,39 +400,19 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 function buildAddress(tags) {
   const parts = [];
   
-  // Số nhà
-  if (tags['addr:housenumber']) {
-    parts.push(tags['addr:housenumber']);
-  }
-  
-  // Tên đường
-  if (tags['addr:street']) {
-    parts.push(tags['addr:street']);
-  }
-  
-  // Phường/Xã
+  if (tags['addr:housenumber']) parts.push(tags['addr:housenumber']);
+  if (tags['addr:street']) parts.push(tags['addr:street']);
   if (tags['addr:quarter'] || tags['addr:suburb']) {
     parts.push(tags['addr:quarter'] || tags['addr:suburb']);
   }
-  
-  // Quận/Huyện
-  if (tags['addr:district']) {
-    parts.push(tags['addr:district']);
-  }
-  
-  // Thành phố
+  if (tags['addr:district']) parts.push(tags['addr:district']);
   if (tags['addr:city'] || tags['addr:province']) {
     parts.push(tags['addr:city'] || tags['addr:province'] || 'TP.HCM');
   } else {
-    parts.push('TP.HCM'); // Mặc định
+    parts.push('TP.HCM');
   }
   
-  // Nếu vẫn trống, dùng địa chỉ display_name
-  if (parts.length === 0 && tags['addr:full']) {
-    return tags['addr:full'];
-  }
-  
-  return parts.length > 0 ? parts.join(', ') : 'Địa chỉ chưa cập nhật (xem trên bản đồ)';
+  return parts.length > 0 ? parts.join(', ') : 'Địa chỉ chưa cập nhật';
 }
 
 function getFallbackPharmacies() {
@@ -570,50 +447,34 @@ function getFallbackPharmacies() {
 
 export const searchMedicine = async (symptoms, location) => {
   console.log('🚀 Starting search...');
-  console.log('   Symptoms:', symptoms);
-  console.log('   Location:', location);
   
   let medicineData;
   
   try {
-    // BƯỚC 1A: Thử dùng AI trước (nếu có token)
-    if (API_CONFIG.huggingface.token && API_CONFIG.huggingface.token !== 'hf_YOUR_TOKEN_HERE') {
+    // Thử dùng AI nếu có token
+    if (API_CONFIG.huggingface.token && API_CONFIG.huggingface.token.startsWith('hf_')) {
       try {
         medicineData = await analyzeSymptomsWithAI(symptoms);
-        console.log('✅ Step 1A: AI analysis successful');
       } catch (aiError) {
-        console.log('⚠️ AI failed, using database fallback');
+        console.log('⚠️ AI failed, using database');
         medicineData = findMedicinesBySymptoms(symptoms);
       }
     } else {
-      // BƯỚC 1B: Không có token → dùng database
-      console.log('ℹ️ No AI token, using database');
       medicineData = findMedicinesBySymptoms(symptoms);
     }
     
-    console.log('✅ Step 1: Medicine data ready', medicineData);
-    
-    // BƯỚC 2: Tìm tọa độ
+    // Tìm hiệu thuốc
     const coords = await geocodeAddress(location);
-    console.log('✅ Step 2: Coordinates', coords);
-    
-    // BƯỚC 3: Tìm hiệu thuốc
     const pharmacies = await findNearbyPharmacies(coords.lat, coords.lon);
-    console.log('✅ Step 3: Pharmacies', pharmacies.length);
     
-    // Kết hợp kết quả
-    const result = {
+    return {
       ...medicineData,
       pharmacies: pharmacies
     };
     
-    console.log('✅ SEARCH COMPLETE:', result);
-    return result;
-    
   } catch (error) {
     console.error('❌ SEARCH ERROR:', error);
     
-    // FALLBACK cuối cùng
     return {
       diagnosis: symptoms.join(', '),
       severity: 'medium',
@@ -621,7 +482,7 @@ export const searchMedicine = async (symptoms, location) => {
         { name: 'Paracetamol 500mg', price: '15,000đ', usage: 'Uống theo chỉ dẫn' }
       ],
       traditionalMeds: [
-        { name: 'Nghỉ ngơi', ingredients: 'Uống nhiều nước', effect: 'Tăng sức đề kháng' }
+        { name: 'Nghỉ ngơi', ingredients: 'Uống nhiều nước', effect: 'Tăng đề kháng' }
       ],
       pharmacies: getFallbackPharmacies(),
       advice: 'Nghỉ ngơi, uống nước. Đến bác sĩ nếu nặng.',
@@ -631,14 +492,11 @@ export const searchMedicine = async (symptoms, location) => {
 };
 
 export const sendChatMessage = async (message) => {
-  console.log('💬 Chat:', message);
-  
-  // Kiểm tra có token không
-  if (!API_CONFIG.huggingface.token || API_CONFIG.huggingface.token === 'hf_YOUR_TOKEN_HERE') {
-    return 'Để được tư vấn chính xác, vui lòng sử dụng tính năng "Tìm thuốc" và chọn đầy đủ các triệu chứng.';
+  if (!API_CONFIG.huggingface.token || !API_CONFIG.huggingface.token.startsWith('hf_')) {
+    return 'Để được tư vấn, vui lòng sử dụng tính năng "Tìm thuốc".';
   }
 
-  const prompt = `Bạn là dược sĩ tư vấn. Trả lời NGẮN GỌN (2-3 câu) bằng tiếng Việt:
+  const prompt = `Bạn là dược sĩ. Trả lời NGẮN GỌN (2-3 câu):
 
 Câu hỏi: ${message}
 
@@ -674,7 +532,7 @@ Trả lời:`;
     return reply || 'Để được tư vấn chính xác hơn, vui lòng sử dụng tính năng "Tìm thuốc".';
 
   } catch (error) {
-    console.error('❌ Chat AI failed:', error);
-    return 'Xin lỗi, tôi không thể trả lời lúc này. Vui lòng sử dụng tính năng "Tìm thuốc" để được hỗ trợ tốt hơn.';
+    console.error('❌ Chat failed:', error);
+    return 'Xin lỗi, tôi không thể trả lời lúc này.';
   }
 };
