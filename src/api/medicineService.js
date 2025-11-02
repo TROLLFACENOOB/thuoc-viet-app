@@ -37,7 +37,7 @@ async function analyzeSymptomsWithAI(symptoms) {
     }
 
     console.log('✅ Groq AI Analysis successful');
-    console.log('   Model: Llama 3.1 70B');
+    console.log('   Model: Llama 3.3 70B');
     console.log('   Tokens:', result.usage);
     
     return result.data;
@@ -69,7 +69,26 @@ export const searchMedicine = async (symptoms, location) => {
     
     try {
       medicineData = await analyzeSymptomsWithAI(symptoms);
+      
+      // ========== DEBUG LOG - KIỂM TRA DỮ LIỆU ==========
+      console.log('🔍 AI Result Full Data:', medicineData);
+      console.log('📋 Diagnosis:', medicineData.diagnosis);
+      console.log('💊 Western Meds Count:', medicineData.westernMeds?.length || 0);
+      console.log('🌿 Traditional Meds Count:', medicineData.traditionalMeds?.length || 0);
+      console.log('💡 Has Advice?', medicineData.advice ? 'YES ✅' : 'NO ❌');
+      console.log('⚠️  Has Warning?', medicineData.warning ? 'YES ✅' : 'NO ❌');
+      
+      if (medicineData.westernMeds?.length > 0) {
+        console.log('💊 First Western Med:', medicineData.westernMeds[0]);
+      }
+      
+      if (medicineData.traditionalMeds?.length > 0) {
+        console.log('🌿 First Traditional Med:', medicineData.traditionalMeds[0]);
+      }
+      // ===================================================
+      
       console.log('✅ Step 1: Groq AI analysis complete');
+      
     } catch (aiError) {
       console.log('⚠️  Groq AI failed, using local database fallback');
       medicineData = findMedicinesBySymptoms(symptoms);
@@ -99,7 +118,13 @@ export const searchMedicine = async (symptoms, location) => {
     };
     
     console.log('═══════════════════════════════════════');
-    console.log('✅ SEARCH COMPLETE');
+    console.log('✅ SEARCH COMPLETE - FINAL RESULT:');
+    console.log('   Diagnosis:', result.diagnosis ? 'YES ✅' : 'NO ❌');
+    console.log('   Western Meds:', result.westernMeds?.length || 0);
+    console.log('   Traditional Meds:', result.traditionalMeds?.length || 0);
+    console.log('   Pharmacies:', result.pharmacies?.length || 0);
+    console.log('   Advice:', result.advice ? 'YES ✅' : 'NO ❌');
+    console.log('   Warning:', result.warning ? 'YES ✅' : 'NO ❌');
     console.log('═══════════════════════════════════════');
     
     return result;
@@ -120,25 +145,30 @@ export const searchMedicine = async (symptoms, location) => {
       westernMeds: [
         { 
           name: 'Paracetamol 500mg', 
-          price: '15,000đ', 
-          usage: 'Uống 1-2 viên khi cần, cách 4-6 giờ, tối đa 8 viên/ngày. Uống sau ăn.' 
+          price: '15,000đ - 20,000đ/hộp 10 viên', 
+          usage: 'Uống 1-2 viên khi cần (đau/sốt), cách 4-6 giờ, tối đa 8 viên/ngày. Uống sau ăn để tránh kích ứng dạ dày.' 
         },
         { 
           name: 'Vitamin C 1000mg', 
-          price: '50,000đ', 
-          usage: 'Uống 1 viên/ngày sau bữa ăn sáng. Tăng cường sức đề kháng.' 
+          price: '50,000đ/hộp 10 viên sủi', 
+          usage: 'Hòa 1 viên vào 200ml nước, uống 1 lần/ngày sau bữa ăn sáng. Tăng cường sức đề kháng, hỗ trợ phục hồi.' 
         }
       ],
       traditionalMeds: [
         { 
+          name: 'Trà gừng mật ong', 
+          ingredients: 'Gừng tươi 20-30g (thái lát), mật ong 2 thìa, nước sôi 300ml', 
+          effect: 'Đun sôi gừng 10 phút, thêm mật ong khi nguội. Uống ấm 2-3 lần/ngày. Giảm đau, sát khuẩn, ấm cơ thể.' 
+        },
+        { 
           name: 'Nghỉ ngơi đầy đủ', 
-          ingredients: 'Ngủ 7-8 giờ/đêm', 
-          effect: 'Giúp cơ thể phục hồi' 
+          ingredients: 'Ngủ 7-8 giờ/đêm, tránh thức kênh', 
+          effect: 'Giúp cơ thể tự phục hồi, tăng cường miễn dịch tự nhiên' 
         },
         { 
           name: 'Uống nhiều nước', 
-          ingredients: '2-3 lít nước/ngày', 
-          effect: 'Thanh lọc cơ thể, bù nước' 
+          ingredients: '2-3 lít nước lọc/ngày (chia nhỏ)', 
+          effect: 'Thanh lọc cơ thể, bù nước, giảm nhiệt độ, đào thải độc tố' 
         }
       ],
       pharmacies: [
@@ -155,10 +185,17 @@ export const searchMedicine = async (symptoms, location) => {
           distance: '1.2 km',
           rating: '4.7',
           phone: '1800 6928'
+        },
+        {
+          name: 'Nhà thuốc An Khang',
+          address: '789 Võ Văn Tần, Q.3, TP.HCM',
+          distance: '1.5 km',
+          rating: '4.3',
+          phone: '028 3930 1234'
         }
       ],
-      advice: 'Nghỉ ngơi, uống nhiều nước, ăn đủ dinh dưỡng. Nếu không khỏi sau 2-3 ngày hoặc triệu chứng nặng thêm, hãy đến bác sĩ.',
-      warning: '⚠️ QUAN TRỌNG: Không tự ý dùng kháng sinh. Luôn hỏi dược sĩ/bác sĩ trước khi dùng thuốc. Gọi 115 nếu cấp cứu.'
+      advice: '💡 Nghỉ ngơi đầy đủ, uống nhiều nước (2-3 lít/ngày), ăn đủ dinh dưỡng, bổ sung trái cây giàu vitamin. Tránh thức khuya, hạn chế tiếp xúc người bệnh. Theo dõi nhiệt độ cơ thể 2 lần/ngày.',
+      warning: '⚠️ QUAN TRỌNG: Đến bác sĩ/bệnh viện NGAY nếu:\n• Sốt trên 39°C không hạ sau dùng thuốc\n• Triệu chứng nặng hơn hoặc kéo dài >3 ngày\n• Khó thở, đau ngực, ho ra máu\n• Choáng váng, lú lẫn, co giật\n• Trẻ em/người cao tuổi/phụ nữ mang thai\n\n🚨 Gọi 115 nếu cấp cứu!'
     };
   }
 };
@@ -209,7 +246,7 @@ export const sendChatMessage = async (message, conversationHistory = []) => {
     
     // Fallback response
     return {
-      reply: '⚠️ Xin lỗi, tôi không thể trả lời lúc này do lỗi kết nối.\n\n💡 Bạn có thể:\n• Thử lại sau vài giây\n• Sử dụng tính năng "Tìm thuốc" ở trang chủ\n• Liên hệ dược sĩ trực tiếp qua hotline 1800 xxxx',
+      reply: '⚠️ Xin lỗi, tôi không thể trả lời lúc này do lỗi kết nối.\n\n💡 Bạn có thể:\n• Thử lại sau vài giây\n• Kiểm tra backend có chạy không (http://localhost:5000/health)\n• Sử dụng tính năng "Tìm thuốc" ở trang chủ\n• Liên hệ dược sĩ trực tiếp qua hotline 1800 xxxx',
       model: 'Fallback'
     };
   }
