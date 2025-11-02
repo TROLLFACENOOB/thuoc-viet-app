@@ -3,7 +3,6 @@
 // ============================================
 
 import { findMedicinesBySymptoms } from './symptomsDB';
-import { geocodeAddress, findNearbyPharmacies } from './pharmacyService';
 
 // URL Backend API
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
@@ -52,82 +51,41 @@ async function analyzeSymptomsWithAI(symptoms) {
 // HÀM CHÍNH - TÌM THUỐC THEO TRIỆU CHỨNG
 // ============================================
 
-export const searchMedicine = async (symptoms, location) => {
+export const searchMedicine = async (symptoms) => {
   console.log('═══════════════════════════════════════');
   console.log('🔍 STARTING MEDICINE SEARCH');
   console.log('═══════════════════════════════════════');
   console.log('📋 Symptoms:', symptoms);
-  console.log('📍 Location:', location);
   
   let medicineData;
   
   try {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // BƯỚC 1: Phân tích triệu chứng với Groq AI
+    // Phân tích triệu chứng với Groq AI
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    console.log('📝 Step 1: Analyzing symptoms with Groq AI...');
+    console.log('📝 Analyzing symptoms with Groq AI...');
     
     try {
       medicineData = await analyzeSymptomsWithAI(symptoms);
       
-      // ========== DEBUG LOG - KIỂM TRA DỮ LIỆU ==========
-      console.log('🔍 AI Result Full Data:', medicineData);
+      console.log('🔍 AI Result:', medicineData);
       console.log('📋 Diagnosis:', medicineData.diagnosis);
       console.log('💊 Western Meds Count:', medicineData.westernMeds?.length || 0);
       console.log('🌿 Traditional Meds Count:', medicineData.traditionalMeds?.length || 0);
-      console.log('💡 Has Advice?', medicineData.advice ? 'YES ✅' : 'NO ❌');
-      console.log('⚠️  Has Warning?', medicineData.warning ? 'YES ✅' : 'NO ❌');
       
-      if (medicineData.westernMeds?.length > 0) {
-        console.log('💊 First Western Med:', medicineData.westernMeds[0]);
-      }
-      
-      if (medicineData.traditionalMeds?.length > 0) {
-        console.log('🌿 First Traditional Med:', medicineData.traditionalMeds[0]);
-      }
-      // ===================================================
-      
-      console.log('✅ Step 1: Groq AI analysis complete');
+      console.log('✅ Groq AI analysis complete');
       
     } catch (aiError) {
-      console.log('⚠️  Groq AI failed, using local database fallback');
+      console.log('⚠️ Groq AI failed, using local database fallback');
       medicineData = findMedicinesBySymptoms(symptoms);
-      console.log('✅ Step 1: Fallback database complete');
+      console.log('✅ Fallback database complete');
     }
     
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // BƯỚC 2: Tìm tọa độ từ địa chỉ
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    console.log('📝 Step 2: Geocoding address...');
-    const coords = await geocodeAddress(location);
-    console.log(`✅ Step 2: Got coordinates (${coords.lat}, ${coords.lon})`);
-    
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // BƯỚC 3: Tìm hiệu thuốc gần nhất
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    console.log('📝 Step 3: Finding nearby pharmacies...');
-    const pharmacies = await findNearbyPharmacies(coords.lat, coords.lon);
-    console.log(`✅ Step 3: Found ${pharmacies.length} pharmacies`);
-    
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // KẾT HỢP KẾT QUẢ
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const result = {
-      ...medicineData,
-      pharmacies: pharmacies
-    };
-    
     console.log('═══════════════════════════════════════');
-    console.log('✅ SEARCH COMPLETE - FINAL RESULT:');
-    console.log('   Diagnosis:', result.diagnosis ? 'YES ✅' : 'NO ❌');
-    console.log('   Western Meds:', result.westernMeds?.length || 0);
-    console.log('   Traditional Meds:', result.traditionalMeds?.length || 0);
-    console.log('   Pharmacies:', result.pharmacies?.length || 0);
-    console.log('   Advice:', result.advice ? 'YES ✅' : 'NO ❌');
-    console.log('   Warning:', result.warning ? 'YES ✅' : 'NO ❌');
+    console.log('✅ SEARCH COMPLETE');
     console.log('═══════════════════════════════════════');
     
-    return result;
+    return medicineData;
     
   } catch (error) {
     console.error('═══════════════════════════════════════');
@@ -137,7 +95,7 @@ export const searchMedicine = async (symptoms, location) => {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // FALLBACK CUỐI CÙNG
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    console.log('⚠️  Using emergency fallback data');
+    console.log('⚠️ Using emergency fallback data');
     
     return {
       diagnosis: `Triệu chứng: ${symptoms.join(', ')}`,
@@ -162,36 +120,13 @@ export const searchMedicine = async (symptoms, location) => {
         },
         { 
           name: 'Nghỉ ngơi đầy đủ', 
-          ingredients: 'Ngủ 7-8 giờ/đêm, tránh thức kênh', 
+          ingredients: 'Ngủ 7-8 giờ/đêm, tránh thức khuya', 
           effect: 'Giúp cơ thể tự phục hồi, tăng cường miễn dịch tự nhiên' 
         },
         { 
           name: 'Uống nhiều nước', 
           ingredients: '2-3 lít nước lọc/ngày (chia nhỏ)', 
           effect: 'Thanh lọc cơ thể, bù nước, giảm nhiệt độ, đào thải độc tố' 
-        }
-      ],
-      pharmacies: [
-        {
-          name: 'Nhà thuốc Pharmacity',
-          address: '123 Nguyễn Văn Linh, Q.7, TP.HCM',
-          distance: '0.8 km',
-          rating: '4.5',
-          phone: '1800 6821'
-        },
-        {
-          name: 'Nhà thuốc Long Châu FPT',
-          address: '456 Lê Văn Việt, Q.9, TP.HCM',
-          distance: '1.2 km',
-          rating: '4.7',
-          phone: '1800 6928'
-        },
-        {
-          name: 'Nhà thuốc An Khang',
-          address: '789 Võ Văn Tần, Q.3, TP.HCM',
-          distance: '1.5 km',
-          rating: '4.3',
-          phone: '028 3930 1234'
         }
       ],
       advice: '💡 Nghỉ ngơi đầy đủ, uống nhiều nước (2-3 lít/ngày), ăn đủ dinh dưỡng, bổ sung trái cây giàu vitamin. Tránh thức khuya, hạn chế tiếp xúc người bệnh. Theo dõi nhiệt độ cơ thể 2 lần/ngày.',

@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHistory } from '../context/HistoryContext';
-import { Sparkles, Shield, Heart, Search, Camera, Clock, ChevronRight } from 'lucide-react';
+import { Sparkles, Shield, Heart, Search, MessageCircle, Clock, ChevronRight } from 'lucide-react';
 
 import DisclaimerCard from '../components/common/DisclaimerCard';
-import CameraModal from '../components/camera/CameraModal';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { searchHistory } = useHistory();
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -53,6 +51,7 @@ export default function HomePage() {
 
       {/* Action Buttons Grid */}
       <div className="grid grid-cols-2 gap-5">
+        {/* Nút Tìm thuốc */}
         <button
           onClick={() => navigate('/search')}
           className="group relative bg-gradient-to-br from-blue-500 to-cyan-400 rounded-3xl p-7 shadow-xl hover:shadow-2xl transition-all duration-300 active:scale-95 overflow-hidden"
@@ -67,17 +66,18 @@ export default function HomePage() {
           </div>
         </button>
 
+        {/* Nút Chat AI - THAY THẾ CAMERA */}
         <button
-          onClick={() => setIsCameraOpen(true)}
+          onClick={() => navigate('/chat')}
           className="group relative bg-gradient-to-br from-purple-500 to-pink-400 rounded-3xl p-7 shadow-xl hover:shadow-2xl transition-all duration-300 active:scale-95 overflow-hidden"
         >
           <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
           <div className="relative">
             <div className="w-16 h-16 bg-white/25 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-              <Camera className="w-8 h-8 text-white" />
+              <MessageCircle className="w-8 h-8 text-white" />
             </div>
-            <p className="font-black text-white text-xl mb-1">Quét đơn</p>
-            <p className="text-white/90 text-sm font-medium">Dùng camera</p>
+            <p className="font-black text-white text-xl mb-1">Chat AI</p>
+            <p className="text-white/90 text-sm font-medium">Tư vấn trực tuyến</p>
           </div>
         </button>
       </div>
@@ -117,9 +117,6 @@ export default function HomePage() {
 
       {/* Disclaimer Card */}
       <DisclaimerCard />
-
-      {/* Camera Modal */}
-      <CameraModal isOpen={isCameraOpen} onClose={() => setIsCameraOpen(false)} />
     </div>
   );
 }

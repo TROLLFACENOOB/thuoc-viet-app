@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Pill, Leaf, Store, AlertCircle } from 'lucide-react';
+import { X, Pill, Leaf, AlertCircle } from 'lucide-react';
 
 export default function ResultPage() {
   const location = useLocation();
@@ -95,58 +95,6 @@ export default function ResultPage() {
         </div>
       </div>
 
-      {/* Hiệu thuốc gần bạn - CẢI TIẾN */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg">
-        <div className="flex items-center gap-2 mb-4">
-          <Store className="w-6 h-6 text-purple-600" />
-          <h3 className="font-bold text-gray-800 text-lg">Hiệu thuốc gần bạn</h3>
-        </div>
-        <div className="space-y-3">
-          {searchResult.pharmacies.map((pharmacy, index) => (
-            <div key={index} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200 hover:shadow-md transition-shadow">
-              {/* Tên + Rating */}
-              <div className="flex justify-between items-start mb-3">
-                <p className="font-bold text-gray-800 text-base flex-1 leading-tight">
-                  {pharmacy.name}
-                </p>
-                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold ml-2 whitespace-nowrap">
-                  ⭐ {pharmacy.rating}
-                </span>
-              </div>
-              
-              {/* Địa chỉ đầy đủ */}
-              <div className="mb-3">
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  📍 {pharmacy.address}
-                </p>
-              </div>
-              
-              {/* Thông tin bổ sung */}
-              <div className="flex flex-wrap gap-3 text-sm">
-                <span className="text-purple-600 font-semibold flex items-center gap-1">
-                  🚶 {pharmacy.distance}
-                </span>
-                
-                {pharmacy.phone && pharmacy.phone !== 'Chưa có SĐT' && pharmacy.phone !== 'N/A' && (
-                  <a 
-                    href={`tel:${pharmacy.phone.replace(/\s/g, '')}`}
-                    className="text-blue-600 font-semibold hover:underline flex items-center gap-1"
-                  >
-                    📞 {pharmacy.phone}
-                  </a>
-                )}
-                
-                {pharmacy.openingHours && pharmacy.openingHours !== 'Chưa rõ giờ mở cửa' && (
-                  <span className="text-green-600 font-semibold flex items-center gap-1">
-                    🕐 {pharmacy.openingHours}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Lời khuyên & Cảnh báo */}
       {searchResult.advice && (
         <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 shadow-lg">
@@ -158,7 +106,7 @@ export default function ResultPage() {
       {searchResult.warning && (
         <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-5 shadow-lg">
           <p className="font-bold text-orange-900 mb-2 text-base">⚠️ Cảnh báo</p>
-          <p className="text-sm text-orange-800 leading-relaxed">{searchResult.warning}</p>
+          <p className="text-sm text-orange-800 leading-relaxed whitespace-pre-line">{searchResult.warning}</p>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, X, Sparkles } from 'lucide-react';
+import { Search, X, Sparkles } from 'lucide-react';
 import { useHistory } from '../context/HistoryContext';
 import { searchMedicine } from '../api/medicineService';
 
@@ -13,24 +13,10 @@ const commonSymptoms = [
 
 export default function SearchPage() {
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
-  const [location, setLocation] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
   const navigate = useNavigate();
   const { addHistoryItem } = useHistory();
-
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation(`TP.HCM (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`);
-        },
-        () => {
-          alert('Không thể lấy vị trí. Vui lòng bật Location Services.');
-        }
-      );
-    }
-  };
 
   const addSymptom = (symptom) => {
     if (!selectedSymptoms.includes(symptom)) {
@@ -61,7 +47,7 @@ export default function SearchPage() {
     setIsSearching(true);
 
     try {
-      const result = await searchMedicine(selectedSymptoms, location);
+      const result = await searchMedicine(selectedSymptoms);
       addHistoryItem(selectedSymptoms, result);
       navigate('/result', { state: { result: result } });
     } catch (error) {
@@ -118,28 +104,6 @@ export default function SearchPage() {
               + {symptom}
             </button>
           ))}
-        </div>
-      </div>
-
-      <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-purple-100">
-        <label className="block text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-blue-500" />
-          Vị trí của bạn
-        </label>
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Nhập địa chỉ hoặc tự động lấy"
-            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors"
-          />
-          <button
-            onClick={getCurrentLocation}
-            className="px-5 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-xl hover:shadow-lg transition-all active:scale-95"
-          >
-            <MapPin className="w-5 h-5" />
-          </button>
         </div>
       </div>
 

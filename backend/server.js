@@ -18,7 +18,6 @@ app.use(express.json());
 // KIỂM TRA API KEY
 // ============================================
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GEOAPIFY_KEY = process.env.GEOAPIFY_KEY; // 👈 Thêm Geoapify key
 
 if (!GROQ_API_KEY) {
   console.error('❌ GROQ_API_KEY không tồn tại!');
@@ -33,10 +32,6 @@ if (!GROQ_API_KEY.startsWith('gsk_')) {
   process.exit(1);
 }
 
-// Cảnh báo nếu thiếu Geoapify (không bắt buộc vì có fallback OSM)
-if (!GEOAPIFY_KEY) {
-  console.warn('⚠️  GEOAPIFY_KEY chưa có - sẽ dùng OpenStreetMap (free)');
-}
 
 // ============================================
 // GROQ API HELPER - CẢI TIẾN
@@ -388,79 +383,6 @@ QUAN TRỌNG: Trả lời CHÍNH XÁC JSON, không thêm bất kỳ text nào kh
   }
 });
 
-// ============================================
-// ROUTE: TEST GEOAPIFY (THAY YOUR_KEY)
-// ============================================
-
-app.get('/test-geoapify', async (req, res) => {
-  try {
-    const GEOAPIFY_KEY = 'YOUR_GEOAPIFY_API_KEY'; // 👈 THAY KEY Ở ĐÂY
-    
-    console.log('🔍 Testing Geoapify API...');
-    
-    // Test 1: Geocoding
-    const address = 'Pharmacity, Nguyễn Văn Linh, Quận 7, TP.HCM';
-    const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(address)}&format=json&apiKey=${GEOAPIFY_KEY}`;
-    
-    console.log('📍 Test 1: Geocoding address...');
-    const geocodeRes = await fetch(geocodeUrl);
-    
-    if (!geocodeRes.ok) {
-      throw new Error(`Geocoding failed: ${geocodeRes.status}`);
-    }
-    
-    const geocodeData = await geocodeRes.json();
-    console.log('✅ Geocoding successful:', geocodeData.results?.[0]?.formatted);
-    
-    // Test 2: Places API (tìm pharmacy)
-    const lat = 10.8231;
-    const lon = 106.6297;
-    const placesUrl = `https://api.geoapify.com/v2/places?categories=healthcare.pharmacy&filter=circle:${lon},${lat},3000&limit=5&apiKey=${GEOAPIFY_KEY}`;
-    
-    console.log('🏥 Test 2: Finding pharmacies...');
-    const placesRes = await fetch(placesUrl);
-    
-    if (!placesRes.ok) {
-      throw new Error(`Places API failed: ${placesRes.status}`);
-    }
-    
-    const placesData = await placesRes.json();
-    console.log('✅ Found pharmacies:', placesData.features?.length || 0);
-    
-    res.json({
-      success: true,
-      message: 'Geoapify API hoạt động tốt!',
-      tests: {
-        geocoding: {
-          status: 'OK',
-          result: geocodeData.results?.[0]?.formatted || 'No result',
-          coordinates: geocodeData.results?.[0] ? {
-            lat: geocodeData.results[0].lat,
-            lon: geocodeData.results[0].lon
-          } : null
-        },
-        places: {
-          status: 'OK',
-          found: placesData.features?.length || 0,
-          pharmacies: placesData.features?.slice(0, 3).map(p => ({
-            name: p.properties.name || 'Unnamed',
-            address: p.properties.formatted || 'No address',
-            distance: p.properties.distance ? `${Math.round(p.properties.distance)}m` : 'Unknown'
-          })) || []
-        }
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ Geoapify test failed:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Geoapify API không hoạt động',
-      details: error.message,
-      hint: 'Kiểm tra lại API Key hoặc xem console log'
-    });
-  }
-});
 
 // ============================================
 // ROUTE: HEALTH CHECK
@@ -536,6 +458,5 @@ app.listen(PORT, () => {
   console.log('📡 Test Endpoints:');
   console.log('   http://localhost:5000/health');
   console.log('   http://localhost:5000/test-groq');
-  console.log('   http://localhost:5000/test-geoapify');
   console.log('═══════════════════════════════════════');
 });
