@@ -4,8 +4,7 @@
 
 const API_CONFIG = {
   huggingface: {
-    url: 'https://api-inference.huggingface.co/models/microsoft/BioGPT',
-    token: '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' // ← Thay token của bạn vào đây
+    token: '' // ← Thay token của bạn vào đây
   }
 };
 
