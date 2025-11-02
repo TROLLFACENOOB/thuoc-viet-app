@@ -5,7 +5,7 @@
 import { findMedicinesBySymptoms } from './symptomsDB';
 
 // URL Backend API
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = 'http://localhost:5000';
 
 // ============================================
 // HÀM TÌM THUỐC BẰNG AI (GỌI BACKEND GROQ)
