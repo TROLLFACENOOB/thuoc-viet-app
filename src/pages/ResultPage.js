@@ -22,9 +22,8 @@ export default function ResultPage() {
     <div className="space-y-6 pb-6">
       <div className="flex items-center gap-3">
         <button
-          // Nút X sẽ quay về trang search, hoặc trang history
           onClick={() => fromHistory ? navigate('/history') : navigate('/search')}
-          className="p-2 hover:bg-gray-100 rounded-xl"
+          className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
         >
           <X className="w-6 h-6" />
         </button>
@@ -33,8 +32,8 @@ export default function ResultPage() {
         </h2>
       </div>
 
+      {/* Disclaimer */}
       <div className="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-2xl p-5 shadow-lg">
-        {/* ... JSX Miễn trừ trách nhiệm (giữ nguyên) ... */}
         <p className="font-bold text-red-900 mb-3 text-lg flex items-center gap-2">
           <AlertCircle className="w-6 h-6" />
           ⚠️ MIỄN TRỪ TRÁCH NHIỆM
@@ -46,13 +45,14 @@ export default function ResultPage() {
         </ul>
       </div>
 
+      {/* Chẩn đoán */}
       <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-purple-100">
-        <h3 className="font-bold text-gray-800 mb-3 text-lg">Chẩn đoán sơ bộ</h3>
-        <p className="text-gray-700">{searchResult.diagnosis}</p>
+        <h3 className="font-bold text-gray-800 mb-3 text-lg">📋 Chẩn đoán sơ bộ</h3>
+        <p className="text-gray-700 text-base leading-relaxed">{searchResult.diagnosis}</p>
       </div>
 
+      {/* Thuốc tây */}
       <div className="bg-white rounded-2xl p-6 shadow-lg">
-        {/* ... JSX Thuốc tây (giữ nguyên) ... */}
         <div className="flex items-center gap-2 mb-4">
           <Pill className="w-6 h-6 text-blue-600" />
           <h3 className="font-bold text-gray-800 text-lg">Thuốc tây</h3>
@@ -60,52 +60,107 @@ export default function ResultPage() {
         <div className="space-y-3">
           {searchResult.westernMeds.map((med, index) => (
             <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-              <div className="flex justify-between mb-2">
-                <p className="font-bold text-gray-800">{med.name}</p>
-                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold">{med.price}</span>
+              <div className="flex justify-between items-start mb-2">
+                <p className="font-bold text-gray-800 flex-1">{med.name}</p>
+                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold ml-2 whitespace-nowrap">
+                  {med.price}
+                </span>
               </div>
-              <p className="text-sm text-gray-600">{med.usage}</p>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                <strong>Cách dùng:</strong> {med.usage}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Thuốc dân gian */}
       <div className="bg-white rounded-2xl p-6 shadow-lg">
-        {/* ... JSX Thuốc dân gian (giữ nguyên) ... */}
         <div className="flex items-center gap-2 mb-4">
           <Leaf className="w-6 h-6 text-green-600" />
           <h3 className="font-bold text-gray-800 text-lg">Thuốc dân gian</h3>
         </div>
         <div className="space-y-3">
-          _      {searchResult.traditionalMeds.map((med, index) => (
+          {searchResult.traditionalMeds.map((med, index) => (
             <div key={index} className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
               <p className="font-bold text-gray-800 mb-2">{med.name}</p>
-              <p className="text-sm text-gray-600 mb-1"><strong>Thành phần:</strong> {med.ingredients}</p>
-              <p className="text-sm text-gray-600"><strong>Tác dụng:</strong> {med.effect}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                <strong>Thành phần:</strong> {med.ingredients}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Tác dụng:</strong> {med.effect}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Hiệu thuốc gần bạn - CẢI TIẾN */}
       <div className="bg-white rounded-2xl p-6 shadow-lg">
-        {/* ... JSX Hiệu thuốc (giữ nguyên) ... */}
         <div className="flex items-center gap-2 mb-4">
           <Store className="w-6 h-6 text-purple-600" />
           <h3 className="font-bold text-gray-800 text-lg">Hiệu thuốc gần bạn</h3>
         </div>
         <div className="space-y-3">
           {searchResult.pharmacies.map((pharmacy, index) => (
-            <div key={index} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
-              <p className="font-bold text-gray-800 mb-2">{pharmacy.name}</p>
-              <p className="text-sm text-gray-600 mb-2">{pharmacy.address}</p>
-              _      <div className="flex justify-between">
-                <p className="text-sm text-purple-600 font-semibold">📍 {pharmacy.distance}</p>
-                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">⭐ {pharmacy.rating}</span>
+            <div key={index} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200 hover:shadow-md transition-shadow">
+              {/* Tên + Rating */}
+              <div className="flex justify-between items-start mb-3">
+                <p className="font-bold text-gray-800 text-base flex-1 leading-tight">
+                  {pharmacy.name}
+                </p>
+                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold ml-2 whitespace-nowrap">
+                  ⭐ {pharmacy.rating}
+                </span>
+              </div>
+              
+              {/* Địa chỉ đầy đủ */}
+              <div className="mb-3">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  📍 {pharmacy.address}
+                </p>
+              </div>
+              
+              {/* Thông tin bổ sung */}
+              <div className="flex flex-wrap gap-3 text-sm">
+                <span className="text-purple-600 font-semibold flex items-center gap-1">
+                  🚶 {pharmacy.distance}
+                </span>
+                
+                {pharmacy.phone && pharmacy.phone !== 'Chưa có SĐT' && pharmacy.phone !== 'N/A' && (
+                  <a 
+                    href={`tel:${pharmacy.phone.replace(/\s/g, '')}`}
+                    className="text-blue-600 font-semibold hover:underline flex items-center gap-1"
+                  >
+                    📞 {pharmacy.phone}
+                  </a>
+                )}
+                
+                {pharmacy.openingHours && pharmacy.openingHours !== 'Chưa rõ giờ mở cửa' && (
+                  <span className="text-green-600 font-semibold flex items-center gap-1">
+                    🕐 {pharmacy.openingHours}
+                  </span>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Lời khuyên & Cảnh báo */}
+      {searchResult.advice && (
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 shadow-lg">
+          <p className="font-bold text-blue-900 mb-2 text-base">💡 Lời khuyên</p>
+          <p className="text-sm text-blue-800 leading-relaxed">{searchResult.advice}</p>
+        </div>
+      )}
+
+      {searchResult.warning && (
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-5 shadow-lg">
+          <p className="font-bold text-orange-900 mb-2 text-base">⚠️ Cảnh báo</p>
+          <p className="text-sm text-orange-800 leading-relaxed">{searchResult.warning}</p>
+        </div>
+      )}
     </div>
   );
 }
