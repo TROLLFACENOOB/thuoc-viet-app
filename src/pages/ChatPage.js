@@ -12,6 +12,7 @@ export default function ChatPage() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isBotReplying, setIsBotReplying] = useState(false);
+  const [showQuickQuestions, setShowQuickQuestions] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -34,6 +35,7 @@ export default function ChatPage() {
     setChatMessages(newMessages);
     setChatInput('');
     setIsBotReplying(true);
+    setShowQuickQuestions(false);
 
     try {
       // Gọi backend với conversation history
@@ -83,6 +85,7 @@ export default function ChatPage() {
   const handleQuickQuestion = (question) => {
     setChatInput(question);
     inputRef.current?.focus();
+    setShowQuickQuestions(false);
   };
 
   // Reset conversation
@@ -95,24 +98,24 @@ export default function ChatPage() {
           model: 'Groq Llama 3.1 70B'
         }
       ]);
+      setShowQuickQuestions(true);
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-170px)] pb-6">
-      {/* Header */}
-      <div className="mb-4 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-        {/* Decorative elements */}
+    <div className="flex flex-col h-[calc(100vh-140px)] max-w-5xl mx-auto">
+      {/* Header - Compact */}
+      <div className="mb-3 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 rounded-2xl p-4 text-white shadow-xl relative overflow-hidden flex-shrink-0">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
         
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
-              <Bot className="w-7 h-7 animate-pulse" />
+            <div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
+              <Bot className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">Tư vấn trực tuyến</h2>
-              <p className="text-sm opacity-90 flex items-center gap-1">
+              <h2 className="text-lg font-bold">Tư vấn trực tuyến</h2>
+              <p className="text-xs opacity-90 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Powered by Groq AI ⚡
               </p>
@@ -129,92 +132,95 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Quick Questions - Chỉ hiện khi chưa chat nhiều */}
-      {chatMessages.length <= 2 && (
-        <div className="mb-4 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-          <p className="text-sm text-gray-600 mb-3 font-medium flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-purple-500" />
-            💡 Câu hỏi gợi ý:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {quickQuestions.map((question, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickQuestion(question)}
-                className="px-3 py-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-xl text-sm text-purple-700 font-medium transition-all hover:shadow-md active:scale-95"
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Messages Container */}
-      <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 mb-4 overflow-y-auto space-y-3 border border-gray-100">
-        {chatMessages.map((msg, index) => (
-          <div 
-            key={index} 
-            className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className={`flex gap-2 max-w-[85%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              {/* Avatar */}
-              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
-                msg.type === 'user' 
-                  ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
-                  : 'bg-gradient-to-br from-blue-500 to-cyan-400'
-              }`}>
-                {msg.type === 'user' ? (
-                  <User className="w-5 h-5 text-white" />
-                ) : (
-                  <Bot className="w-5 h-5 text-white" />
-                )}
-              </div>
+      {/* Messages Container - Tối đa hóa chiều cao */}
+      <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 flex flex-col overflow-hidden">
+        {/* Messages Area */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-3">
+          {chatMessages.map((msg, index) => (
+            <div 
+              key={index} 
+              className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className={`flex gap-2 max-w-[80%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                {/* Avatar */}
+                <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-md ${
+                  msg.type === 'user' 
+                    ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
+                    : 'bg-gradient-to-br from-blue-500 to-cyan-400'
+                }`}>
+                  {msg.type === 'user' ? (
+                    <User className="w-5 h-5 text-white" />
+                  ) : (
+                    <Bot className="w-5 h-5 text-white" />
+                  )}
+                </div>
 
-              {/* Message Bubble */}
-              <div className={`px-4 py-3 rounded-2xl shadow-md ${
-                msg.type === 'user' 
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-tr-none' 
-                  : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
-              }`}>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
-                {msg.model && (
-                  <p className={`text-xs mt-2 flex items-center gap-1 ${
-                    msg.type === 'user' ? 'opacity-70' : 'opacity-50'
-                  }`}>
-                    <Sparkles className="w-3 h-3" />
-                    {msg.model}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Typing Indicator */}
-        {isBotReplying && (
-          <div className="flex justify-start animate-fadeIn">
-            <div className="flex gap-2 max-w-[85%]">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-cyan-400 shadow-md">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-              <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200 shadow-md rounded-tl-none">
-                <div className="flex gap-1.5">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                {/* Message Bubble */}
+                <div className={`px-4 py-3 rounded-2xl shadow-md ${
+                  msg.type === 'user' 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-tr-none' 
+                    : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
+                }`}>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                  {msg.model && (
+                    <p className={`text-xs mt-2 flex items-center gap-1 ${
+                      msg.type === 'user' ? 'opacity-70' : 'opacity-50'
+                    }`}>
+                      <Sparkles className="w-3 h-3" />
+                      {msg.model}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
+          ))}
+
+          {/* Typing Indicator */}
+          {isBotReplying && (
+            <div className="flex justify-start animate-fadeIn">
+              <div className="flex gap-2 max-w-[80%]">
+                <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-cyan-400 shadow-md">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200 shadow-md rounded-tl-none">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Quick Questions - Nằm trong khung chat, phía dưới messages */}
+        {showQuickQuestions && chatMessages.length <= 2 && (
+          <div className="px-4 pb-3 border-t border-gray-100 bg-gradient-to-br from-purple-50/50 to-pink-50/50">
+            <p className="text-xs text-gray-600 mb-2 mt-3 font-medium flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-purple-500" />
+              💡 Câu hỏi gợi ý:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {quickQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleQuickQuestion(question)}
+                  className="px-3 py-1.5 bg-white hover:bg-purple-50 border border-purple-200 rounded-lg text-xs text-purple-700 font-medium transition-all hover:shadow-md active:scale-95"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="flex gap-2">
+      {/* Input Area - Compact */}
+      <div className="mt-3 flex gap-2 flex-shrink-0">
         <textarea
           ref={inputRef}
           value={chatInput}
@@ -223,8 +229,8 @@ export default function ChatPage() {
           placeholder="Nhập câu hỏi... (Enter để gửi, Shift+Enter để xuống dòng)"
           disabled={isBotReplying}
           rows={1}
-          className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-100 focus:outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          style={{ minHeight: '48px', maxHeight: '120px' }}
+          className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-100 focus:outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
+          style={{ minHeight: '48px', maxHeight: '100px' }}
         />
         <button
           onClick={handleSend}
@@ -235,14 +241,10 @@ export default function ChatPage() {
         </button>
       </div>
 
-      {/* Footer Info */}
-      <div className="mt-3 text-center space-y-1">
+      {/* Footer Info - Compact */}
+      <div className="mt-2 text-center flex-shrink-0">
         <p className="text-xs text-gray-500">
           ⚠️ Thông tin chỉ tham khảo. Hãy hỏi bác sĩ/dược sĩ trước khi dùng thuốc.
-        </p>
-        <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
-          <Sparkles className="w-3 h-3" />
-          AI có thể mắc lỗi. Luôn kiểm tra thông tin quan trọng.
         </p>
       </div>
     </div>
