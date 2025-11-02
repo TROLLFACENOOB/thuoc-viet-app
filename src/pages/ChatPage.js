@@ -1,76 +1,249 @@
-import React, { useState } from 'react';
-import { sendChatMessage } from '../api/medicineService'; // 👈 Gọi API chat
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User, Sparkles, RefreshCw } from 'lucide-react';
+import { sendChatMessage } from '../api/medicineService';
 
 export default function ChatPage() {
   const [chatMessages, setChatMessages] = useState([
-    { type: 'bot', text: 'Xin chào! Tôi là trợ lý ảo Thuốc Việt. Bạn có thắc mắc gì về thuốc không?' }
+    { 
+      type: 'bot', 
+      text: '👋 Xin chào! Tôi là trợ lý ảo **Thuốc Việt**, được hỗ trợ bởi Groq AI.\n\n💊 Tôi có thể giúp bạn:\n• Tư vấn về thuốc và liều lượng\n• Giải đáp thắc mắc sức khỏe\n• Hướng dẫn sử dụng thuốc an toàn\n• Tư vấn về triệu chứng bệnh\n\n❓ Bạn có câu hỏi gì không?',
+      model: 'Groq Llama 3.1 70B'
+    }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isBotReplying, setIsBotReplying] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
+  // Auto scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, isBotReplying]);
+
+  // Handle send message
   const handleSend = async () => {
     const message = chatInput.trim();
     if (message === '' || isBotReplying) return;
     
+    // Add user message
     const newMessages = [...chatMessages, { type: 'user', text: message }];
     setChatMessages(newMessages);
     setChatInput('');
     setIsBotReplying(true);
 
     try {
-      // Gọi API (mock)
-      const botResponse = await sendChatMessage(message);
+      // Gọi backend với conversation history
+      const result = await sendChatMessage(
+        message,
+        chatMessages.slice(-6) // Lấy 6 tin nhắn gần nhất để giữ context
+      );
       
-      setChatMessages([...newMessages, { type: 'bot', text: botResponse }]);
+      setChatMessages([...newMessages, { 
+        type: 'bot', 
+        text: result.reply,
+        model: result.model 
+      }]);
+
     } catch (error) {
-      setChatMessages([...newMessages, { type: 'bot', text: 'Xin lỗi, tôi đang gặp sự cố. Vui lòng thử lại sau.' }]);
+      console.error('Chat error:', error);
+      setChatMessages([...newMessages, { 
+        type: 'bot', 
+        text: '⚠️ Xin lỗi, tôi đang gặp sự cố kết nối với Groq AI.\n\n💡 Vui lòng:\n• Kiểm tra backend có chạy không\n• Thử lại sau vài giây\n• Hoặc sử dụng tính năng "Tìm thuốc"',
+        model: 'Error Handler'
+      }]);
     } finally {
       setIsBotReplying(false);
+      // Focus lại input sau khi gửi
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  };
+
+  // Handle Enter key
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Quick questions
+  const quickQuestions = [
+    'Paracetamol dùng như thế nào?',
+    'Thuốc ho nào tốt nhất?',
+    'Đau bụng nên uống thuốc gì?',
+    'Cách phân biệt cảm cúm và COVID-19?',
+    'Vitamin C uống khi nào?',
+    'Thuốc kháng sinh có cần đơn không?'
+  ];
+
+  const handleQuickQuestion = (question) => {
+    setChatInput(question);
+    inputRef.current?.focus();
+  };
+
+  // Reset conversation
+  const handleReset = () => {
+    if (window.confirm('Xóa toàn bộ cuộc trò chuyện?')) {
+      setChatMessages([
+        { 
+          type: 'bot', 
+          text: '👋 Cuộc trò chuyện mới bắt đầu! Tôi có thể giúp gì cho bạn?',
+          model: 'Groq Llama 3.1 70B'
+        }
+      ]);
     }
   };
 
   return (
-    // Dùng 100vh và trừ đi chiều cao của Header và BottomNav
     <div className="flex flex-col h-[calc(100vh-170px)] pb-6">
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
-        Tư vấn trực tuyến
-      </h2>
+      {/* Header */}
+      <div className="mb-4 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+        
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
+              <Bot className="w-7 h-7 animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Tư vấn trực tuyến</h2>
+              <p className="text-sm opacity-90 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Powered by Groq AI ⚡
+              </p>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleReset}
+            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all active:scale-95"
+            title="Bắt đầu cuộc trò chuyện mới"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Questions - Chỉ hiện khi chưa chat nhiều */}
+      {chatMessages.length <= 2 && (
+        <div className="mb-4 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+          <p className="text-sm text-gray-600 mb-3 font-medium flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-purple-500" />
+            💡 Câu hỏi gợi ý:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {quickQuestions.map((question, index) => (
+              <button
+                key={index}
+                onClick={() => handleQuickQuestion(question)}
+                className="px-3 py-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-xl text-sm text-purple-700 font-medium transition-all hover:shadow-md active:scale-95"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       
-      <div className="flex-1 bg-white rounded-2xl shadow-lg p-4 mb-4 overflow-y-auto space-y-3">
+      {/* Messages Container */}
+      <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 mb-4 overflow-y-auto space-y-3 border border-gray-100">
         {chatMessages.map((msg, index) => (
-          <div key={index} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-              msg.type === 'user' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-gray-100 text-gray-800'
-            }`}>
-              <p className="text-sm">{msg.text}</p>
+          <div 
+            key={index} 
+            className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <div className={`flex gap-2 max-w-[85%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              {/* Avatar */}
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
+                msg.type === 'user' 
+                  ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
+                  : 'bg-gradient-to-br from-blue-500 to-cyan-400'
+              }`}>
+                {msg.type === 'user' ? (
+                  <User className="w-5 h-5 text-white" />
+                ) : (
+                  <Bot className="w-5 h-5 text-white" />
+                )}
+              </div>
+
+              {/* Message Bubble */}
+              <div className={`px-4 py-3 rounded-2xl shadow-md ${
+                msg.type === 'user' 
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-tr-none' 
+                  : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
+              }`}>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                {msg.model && (
+                  <p className={`text-xs mt-2 flex items-center gap-1 ${
+                    msg.type === 'user' ? 'opacity-70' : 'opacity-50'
+                  }`}>
+                    <Sparkles className="w-3 h-3" />
+                    {msg.model}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         ))}
+
+        {/* Typing Indicator */}
         {isBotReplying && (
-          <div className="flex justify-start">
-            <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-gray-100 text-gray-800">
-              <p className="text-sm italic">... Bot đang nhập</p>
+          <div className="flex justify-start animate-fadeIn">
+            <div className="flex gap-2 max-w-[85%]">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-cyan-400 shadow-md">
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+              <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200 shadow-md rounded-tl-none">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
             </div>
           </div>
         )}
+
+        <div ref={messagesEndRef} />
       </div>
 
+      {/* Input Area */}
       <div className="flex gap-2">
-        <input
-          type="text"
+        <textarea
+          ref={inputRef}
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Nhập câu hỏi..."
-          className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none"
+          onKeyPress={handleKeyPress}
+          placeholder="Nhập câu hỏi... (Enter để gửi, Shift+Enter để xuống dòng)"
+          disabled={isBotReplying}
+          rows={1}
+          className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-100 focus:outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          style={{ minHeight: '48px', maxHeight: '120px' }}
         />
         <button
           onClick={handleSend}
-          disabled={isBotReplying}
-          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all active:scale-95 disabled:opacity-50"
+          disabled={isBotReplying || !chatInput.trim()}
+          className="px-5 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
         >
-          Gửi
+          <Send className="w-5 h-5" />
         </button>
+      </div>
+
+      {/* Footer Info */}
+      <div className="mt-3 text-center space-y-1">
+        <p className="text-xs text-gray-500">
+          ⚠️ Thông tin chỉ tham khảo. Hãy hỏi bác sĩ/dược sĩ trước khi dùng thuốc.
+        </p>
+        <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
+          <Sparkles className="w-3 h-3" />
+          AI có thể mắc lỗi. Luôn kiểm tra thông tin quan trọng.
+        </p>
       </div>
     </div>
   );
