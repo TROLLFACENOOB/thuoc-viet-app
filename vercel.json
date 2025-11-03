@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "env": {
-    "GROQ_API_KEY": "@groq-api-key"
-  },
   "builds": [
     {
       "src": "package.json",
@@ -21,5 +18,8 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "GROQ_API_KEY": "@groq_api_key"
+  }
 }
